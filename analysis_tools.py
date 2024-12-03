@@ -25,17 +25,62 @@ def fetch_covidcast_data(
             raise e
 
     # Convert Unix timestamps to datetime
-    df["time_value"] = pd.to_datetime(df["time_value"], unit="D")
+    df["time_value"] = pd.to_datetime(df["time_value"], unit="D").dt.date
 
     return df
 
 
-def calculate_epi_correlation(df1, df2, cor_by="time_value"):
-    # Convert pandas DataFrames back to R objects
+def merge_dataframes(df1, df2):
+    # Verify that geo_type, geo_value, and time_type match
+    if not all(
+        df1[key].unique()[0] == df2[key].unique()[0]
+        for key in ["geo_type", "geo_value", "time_type"]
+    ):
+        raise ValueError(
+            "geo_type, geo_value and time_type must match between datasets"
+        )
+
+    # Create merged dataframe with selected columns
+    merged_df = pd.merge(
+        df1[
+            [
+                "source",
+                "signal",
+                "geo_type",
+                "geo_value",
+                "time_type",
+                "time_value",
+                "value",
+            ]
+        ],
+        df2[["source", "signal", "time_value", "value"]],
+        on="time_value",
+        suffixes=("1", "2"),
+    )
+
+    # Reorder columns as specified
+    final_columns = [
+        "source1",
+        "signal1",
+        "source2",
+        "signal2",
+        "geo_type",
+        "geo_value",
+        "time_type",
+        "time_value",
+        "value1",
+        "value2",
+    ]
+
+    return merged_df[final_columns]
+
+
+def calculate_epi_correlation(df1, df2, cor_by="geo_value"):
+    df = merge_dataframes(df1, df2)
+
     with conversion.localconverter(default_converter + pandas2ri.converter):
         r.source("R_analysis_tools.r")
 
-        # r_df = conversion.py2rpy(df1)
+        corr_df = r.calculate_correlation(df, cor_by)
 
-        # TODO: Calculate correlation
-        pass
+    return corr_df

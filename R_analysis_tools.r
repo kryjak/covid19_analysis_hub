@@ -15,14 +15,16 @@ fetch_covidcast_data <- function(
     time_values = epirange(init_date, final_date)
   )
 
-  # Convert response to dataframe
-#   df <- as.data.frame(response) %>%
-#     select(geo_value, time_value, value) %>%
-#     mutate(time_value = as.Date(as.numeric(time_value), origin = "1970-01-01"))
-
   return(response)
 }
 
-calculate_correlation <- function(epi_df1, epi_df2, cor_by) {
-  epi_cor(epi_df1, epi_df2, cor_by = cor_by)
+calculate_correlation <- function(df, cor_by="geo_value") {
+  df <- as_epi_df(df)
+  cor_value <- epi_cor(df,
+                    value1,
+                    value2,
+                    cor_by=cor_by)
+
+  return(cor_value)
+
 }
