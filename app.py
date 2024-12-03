@@ -17,26 +17,37 @@ from geo_codes import (
     msa_by_state,
     display_to_msa,
 )
-from utils import get_shared_geotypes, get_shared_dates
-# import covidcast as cc
-# import delphi_epidata as de
+from utils import (
+    get_shared_geotypes,
+    get_shared_dates,
+    to_epidate_range,
+    to_epiweek_range,
+    create_dual_axis_plot,
+)
+from analysis_tools import fetch_covidcast_data
+
 
 covidcast_metadata = pd.read_csv("covidcast_metadata.csv")
 
 st.title("COVID-19 Signal Correlation and Forecast Analysis")
 st.write("This app allows you to explore the correlation between two COVID-19 signals.")
 
-signals = list(names_to_sources.keys())
+signals_display = list(names_to_sources.keys())
 
 col1, col2 = st.columns(2)
 with col1:
-    signal1 = st.selectbox("Choose signal 1:", signals)
+    signal_display1 = st.selectbox("Choose signal 1:", signals_display)
+    source1, signal1 = names_to_sources[signal_display1]
 with col2:
-    signal2 = st.selectbox(
-        "Choose signal 2:", [signal for signal in signals if signal != signal1]
+    signal_display2 = st.selectbox(
+        "Choose signal 2:",
+        [signal for signal in signals_display if signal != signal_display1],
     )
+    source2, signal2 = names_to_sources[signal_display2]
 
-shared_geo_types = get_shared_geotypes(covidcast_metadata, signal1, signal2)
+shared_geo_types = get_shared_geotypes(
+    covidcast_metadata, signal_display1, signal_display2
+)
 shared_geo_types_display = [
     geotypes_to_display[geo_type] for geo_type in shared_geo_types
 ]
@@ -88,10 +99,13 @@ with col2:
             "Designated Market Areas (DMAs) are proprietary information released by Nielsen. The subscription to this data costs $8000. Sorry.",
             icon="🚨",
         )
+    else:
+        st.error(f"Invalid geo_type: {geo_type}", icon="🚨")
+        st.stop()
 
 try:
     shared_init_date, shared_final_date, time_type = get_shared_dates(
-        covidcast_metadata, signal1, signal2, geo_type
+        covidcast_metadata, signal_display1, signal_display2, geo_type
     )
 except ValueError:
     st.error(
@@ -100,9 +114,39 @@ except ValueError:
     )
     st.stop()
 
-chosen_init_date, chosen_final_date = st.slider(
+init_date, final_date = st.slider(
     "Date range:",
     min_value=shared_init_date,
     max_value=shared_final_date,
     value=(shared_init_date, shared_final_date),
 )
+
+if time_type == "day":
+    date_range = to_epidate_range(init_date, final_date)
+elif time_type == "week":
+    date_range = to_epiweek_range(init_date, final_date)
+else:
+    st.error(f"Invalid time_type: {time_type}", icon="🚨")
+    st.stop()
+
+button_enabled = signal1 != signal2 and geo_type != "dma" and "region" in locals()
+
+if st.button(
+    "Fetch Data",
+    type="primary",
+    disabled=not button_enabled,
+    help="Click to fetch and analyze the selected signals",
+):
+    with st.spinner("Fetching data..."):
+        # Load the R script containing your function
+        df1 = fetch_covidcast_data(
+            geo_type, region, source1, signal1, date_range[0], date_range[1], time_type
+        )
+        df2 = fetch_covidcast_data(
+            geo_type, region, source2, signal2, date_range[0], date_range[1], time_type
+        )
+
+        fig = create_dual_axis_plot(df1, df2, signal_display1, signal_display2)
+        st.pyplot(fig)
+
+st.divider()
