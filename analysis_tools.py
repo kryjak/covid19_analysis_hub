@@ -2,6 +2,7 @@ import pandas as pd
 from rpy2.robjects import r
 from rpy2.robjects import pandas2ri
 from rpy2.robjects import conversion, default_converter
+import streamlit as st
 
 
 def fetch_covidcast_data(
@@ -85,11 +86,35 @@ def calculate_epi_correlation(df1, df2, cor_by="geo_value", lag=0):
 
     return corr_df
 
+
 def get_lags_and_correlations(df1, df2, cor_by="geo_value", max_lag=14):
-    lags_and_correlations = {}
+    # Merge once at the beginning
+    merged_df = merge_dataframes(df1, df2)
 
-    for lag in range(-max_lag, max_lag + 1):
-        corr_df = calculate_epi_correlation(df1, df2, cor_by, lag)
-        lags_and_correlations[lag] = corr_df.iloc[0]["cor"]
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+    
+    try:
+        status_text.text("Calculating correlations...")
+        # Calculate correlations with progress updates
+        lags_and_correlations = {}
+        total_lags = 2 * max_lag + 1
+        
+        with conversion.localconverter(default_converter + pandas2ri.converter):
+            r_df = pandas2ri.py2rpy(merged_df)
+            r.source("R_analysis_tools.r")
+            
+            for i, lag in enumerate(range(-max_lag, max_lag + 1)):
+                corr = r.calculate_correlation(r_df, cor_by, lag)
+                lags_and_correlations[lag] = corr.iloc[0]["cor"]
+                
+                # Update progress
+                progress = (i + 1) / total_lags
+                progress_bar.progress(progress)
+                status_text.text(f"Calculating correlations... ({i + 1}/{total_lags})")
 
-    return lags_and_correlations
+        return lags_and_correlations
+    finally:
+        # Clean up progress indicators
+        progress_bar.empty()
+        status_text.empty()
