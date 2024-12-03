@@ -154,17 +154,17 @@ if st.button(
     st.divider()
 
 # Only show the lag slider and plot if we have data
-if 'df1' in st.session_state and 'df2' in st.session_state:
+if "df1" in st.session_state and "df2" in st.session_state:
     plot_container = st.empty()
-    
+
     selected_lag = st.slider(
         f"Time lag ({time_type}s)",
         min_value=-max_lag,
         max_value=max_lag,
         value=0,
-        help=f"Shift signal 1 ({signal_display1}) forwards or backwards in time"
+        help=f"Shift signal 1 ({signal_display1}) forwards or backwards in time",
     )
-    
+
     # Update plot based on current lag
     new_fig, new_correlation = update_plot_with_lag(
         st.session_state.df1,
@@ -174,25 +174,35 @@ if 'df1' in st.session_state and 'df2' in st.session_state:
         geo_type,
         region_display,
         selected_lag,
-        time_type
+        time_type,
     )
-    
+
     with plot_container:
         st.plotly_chart(new_fig, use_container_width=True)
-    
-    st.write(f'Signal correlation at lag {selected_lag} {time_type}s: **{new_correlation}**')
+
+    st.write(
+        f"Signal correlation at lag {selected_lag} {time_type}s: **{new_correlation}**"
+    )
 
     st.divider()
 
-    if st.button("Calculate best time lag",
-                type="primary",
-                help="Calculate the time lag that maximises the correlation between the two signals"):
-        with st.spinner("This might take a while (up to ~2mins for the full data range)..."):
-            lags_and_correlations = get_lags_and_correlations(st.session_state.df1, st.session_state.df2, cor_by="geo_value", max_lag=max_lag)
+    if st.button(
+        "Calculate best time lag",
+        type="primary",
+        help="Calculate the time lag that maximises the correlation between the two signals",
+    ):
+        with st.spinner(
+            "This might take a while (up to ~2mins for the full data range)..."
+        ):
+            lags_and_correlations = get_lags_and_correlations(
+                st.session_state.df1,
+                st.session_state.df2,
+                cor_by="geo_value",
+                max_lag=max_lag,
+            )
         best_lag = max(lags_and_correlations, key=lags_and_correlations.get)
         best_correlation = lags_and_correlations[best_lag]
         st.write(f"Best time lag: **{best_lag} {time_type}s**")
         st.write(f"Best correlation: **{best_correlation:.3f}**")
-        
+
         # in two columns, plot:
-        

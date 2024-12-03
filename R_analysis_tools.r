@@ -23,8 +23,8 @@ calculate_correlation <- function(df, cor_by="geo_value", lag=0) {
   cor_value <- epi_cor(df,
                     value1,
                     value2,
-                    cor_by=cor_by,
-                    dt1=lag)
+                    cor_by = cor_by,
+                    dt1 = lag)
 
   return(cor_value)
 
