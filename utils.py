@@ -2,8 +2,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from available_signals import names_to_sources
-from datetime import date
+from datetime import date, timedelta
 from epiweeks import Week
+import plotly.subplots as make_subplots
+import plotly.graph_objects as go
+from analysis_tools import calculate_epi_correlation
 
 covidcast_metadata = pd.read_csv("covidcast_metadata.csv")
 
@@ -81,67 +84,77 @@ def to_epiweek_range(dt1: date, dt2: date) -> tuple[int, int]:
     )
 
 
-def create_dual_axis_plot(df1, df2, signal_display1, signal_display2):
-    """
-    Create a dual-axis plot with two y-axes based on the DataFrames from two signals.
-    Args:
-        df1: DataFrame with the first signal
-        df2: DataFrame with the second signal
-        signal_display1: Displayed name of the first signal
-        signal_display2: Displayed name of the second signal
-    Returns:
-        fig: The figure object containing the plot
-
-    Notes:
-        - The x-axis is formatted based on the date range of the data.
-        - Converts Unix timestamps to pandas datetime objects
-        - For ranges ≤ 90 days: Show individual days with weekly intervals
-        - For ranges ≤ 1 year: Show monthly intervals
-        - For ranges > 1 year: Show quarterly intervals
-    """
-    fig, ax1 = plt.subplots(figsize=(12, 6))
-
-    # Plot first signal on primary y-axis
-    color1 = "#1f77b4"  # Blue
-    ax1.set_xlabel("Date", fontsize=14)
-    ax1.set_ylabel(signal_display1, color=color1, fontsize=14)
-    line1 = ax1.plot(
-        df1["time_value"], df1["value"], color=color1, label=signal_display1
+def create_plotly_dual_axis(df1, df2, name1, name2, title):
+    fig = make_subplots.make_subplots(specs=[[{"secondary_y": True}]])
+    
+    # Add traces with specific colors
+    fig.add_trace(
+        go.Scatter(
+            x=df1['time_value'], 
+            y=df1['value'], 
+            name=name1,
+            line=dict(color='#1f77b4')  # Default matplotlib blue
+        ),
+        secondary_y=False,
     )
-    ax1.tick_params(axis="y", labelcolor=color1)
-
-    # Create secondary y-axis and plot second signal
-    ax2 = ax1.twinx()
-    color2 = "#ff7f0e"  # Orange
-    ax2.set_ylabel(signal_display2, color=color2, fontsize=14)
-    line2 = ax2.plot(
-        df2["time_value"], df2["value"], color=color2, label=signal_display2
+    
+    fig.add_trace(
+        go.Scatter(
+            x=df2['time_value'], 
+            y=df2['value'], 
+            name=name2,
+            line=dict(color='#ff7f0e')  # Default matplotlib orange
+        ),
+        secondary_y=True,
     )
-    ax2.tick_params(axis="y", labelcolor=color2)
-
-    # Combine legends
-    lines = line1 + line2
-    labels = [line.get_label() for line in lines]
-    ax1.legend(lines, labels, loc="upper left")
-
-    # Format x-axis based on date range
-    date_range = (df1["time_value"].max() - df1["time_value"].min()).days
-    if date_range <= 90:  # For ranges up to 3 months
-        ax1.xaxis.set_major_locator(
-            mdates.DayLocator(interval=7)
-        )  # Show weekly intervals
-        ax1.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d"))
-    elif date_range <= 365:  # For ranges up to 1 year
-        ax1.xaxis.set_major_locator(mdates.MonthLocator())
-        ax1.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
-    else:  # For ranges over 1 year
-        ax1.xaxis.set_major_locator(mdates.MonthLocator(interval=3))  # Quarterly
-        ax1.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
-
-    # Rotate and align the tick labels so they look better
-    plt.setp(ax1.get_xticklabels(), rotation=45, ha="right")
-
-    # Adjust layout to prevent label cutoff
-    plt.tight_layout()
-
+    
+    # Calculate the range for both y-axes to ensure they start at 0
+    y1_max = df1['value'].max()
+    y2_max = df2['value'].max()
+    
+    # Update layout
+    fig.update_layout(
+        title=title,
+        height=600,  # Fixed height
+        hovermode='x unified',
+        legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=0.01
+        ),
+        yaxis=dict(
+            title=name1,
+            range=[0, y1_max * 1.1]  # Add 10% padding
+        ),
+        yaxis2=dict(
+            title=name2,
+            range=[0, y2_max * 1.1],  # Add 10% padding
+            scaleanchor="y",
+            scaleratio=y1_max/y2_max if y2_max != 0 else 1
+        )
+    )
+    
     return fig
+
+def update_plot_with_lag(df1, df2, signal_display1, signal_display2, geo_type, region_display, lag, time_type):
+    lag_days = lag if time_type == "day" else lag * 7
+    # the shift in the displayed signal1 is opposite to lag_days
+    # this is because a lag of dt1=-10 means that signal1 is correlated with the values of signal2 10 days into the future
+    # e.g. Covid-19 cases on 1st of June are correlated with deaths on 11th of June
+    # to visualise this correlation, we therefore need to shift signal1 in the opposite direction to sign(lag)
+    df1_shifted = df1.copy()
+    df1_shifted['time_value'] = df1_shifted['time_value'] + timedelta(days=-lag_days)
+    
+    title = f"Comparison of {signal_display1} vs {signal_display2} in {geo_type.capitalize()} {region_display}"
+    
+    fig = create_plotly_dual_axis(
+        df1_shifted, 
+        df2, 
+        f"{signal_display1} (lag: {lag} {time_type}s)", 
+        signal_display2,
+        title
+    )
+    
+    cor_df = calculate_epi_correlation(df1, df2, cor_by="geo_value", lag=lag_days)
+    return fig, cor_df.iloc[0]["cor"].round(3)

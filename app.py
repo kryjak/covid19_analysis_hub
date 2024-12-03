@@ -22,13 +22,9 @@ from utils import (
     get_shared_dates,
     to_epidate_range,
     to_epiweek_range,
-    create_dual_axis_plot,
+    update_plot_with_lag,
 )
-from analysis_tools import fetch_covidcast_data, calculate_epi_correlation
-from datetime import timedelta
-import plotly.subplots as make_subplots
-import plotly.graph_objects as go
-
+from analysis_tools import fetch_covidcast_data
 
 covidcast_metadata = pd.read_csv("covidcast_metadata.csv")
 
@@ -162,80 +158,21 @@ if 'df1' in st.session_state and 'df2' in st.session_state:
         f"Time lag ({time_type}s)",
         min_value=-max_lag,
         max_value=max_lag,
-        value=0,  # Always start at 0
+        value=0,
         help=f"Shift signal 1 ({signal_display1}) forwards or backwards in time"
     )
     
-    def create_plotly_dual_axis(df1, df2, name1, name2):
-        fig = make_subplots.make_subplots(specs=[[{"secondary_y": True}]])
-        
-        # Add traces with specific colors
-        fig.add_trace(
-            go.Scatter(
-                x=df1['time_value'], 
-                y=df1['value'], 
-                name=name1,
-                line=dict(color='#1f77b4')  # Default matplotlib blue
-            ),
-            secondary_y=False,
-        )
-        
-        fig.add_trace(
-            go.Scatter(
-                x=df2['time_value'], 
-                y=df2['value'], 
-                name=name2,
-                line=dict(color='#ff7f0e')  # Default matplotlib orange
-            ),
-            secondary_y=True,
-        )
-        
-        # Calculate the range for both y-axes to ensure they start at 0
-        y1_max = df1['value'].max()
-        y2_max = df2['value'].max()
-        
-        # Update layout
-        fig.update_layout(
-            title=f"Comparison of {signal_display1} vs {signal_display2} in {geo_type.capitalize()} {region_display}",
-            height=600,  # Fixed height
-            hovermode='x unified',
-            legend=dict(
-                yanchor="top",
-                y=0.99,
-                xanchor="left",
-                x=0.01
-            ),
-            yaxis=dict(
-                title=signal_display1,
-                range=[0, y1_max * 1.1]  # Add 10% padding
-            ),
-            yaxis2=dict(
-                title=signal_display2,
-                range=[0, y2_max * 1.1],  # Add 10% padding
-                scaleanchor="y",
-                scaleratio=y1_max/y2_max if y2_max != 0 else 1  # This ensures the scales are proportional
-            )
-        )
-
-        return fig
-    
-    def update_plot(lag):
-        shift_days = lag if time_type == "day" else lag * 7
-        df1_shifted = st.session_state.df1.copy()
-        df1_shifted['time_value'] = df1_shifted['time_value'] + timedelta(days=shift_days)
-        
-        fig = create_plotly_dual_axis(
-            df1_shifted, 
-            st.session_state.df2, 
-            f"{signal_display1} (lag: {lag} {time_type}s)", 
-            signal_display2
-        )
-        
-        cor_df = calculate_epi_correlation(df1_shifted, st.session_state.df2, cor_by="geo_value")
-        return fig, cor_df.iloc[0]["cor"].round(3)
-    
     # Update plot based on current lag
-    new_fig, new_correlation = update_plot(selected_lag)
+    new_fig, new_correlation = update_plot_with_lag(
+        st.session_state.df1,
+        st.session_state.df2,
+        signal_display1,
+        signal_display2,
+        geo_type,
+        region_display,
+        selected_lag,
+        time_type
+    )
     
     with plot_container:
         st.plotly_chart(new_fig, use_container_width=True)
