@@ -103,8 +103,8 @@ def create_dual_axis_plot(df1, df2, signal_display1, signal_display2):
 
     # Plot first signal on primary y-axis
     color1 = "#1f77b4"  # Blue
-    ax1.set_xlabel("Date")
-    ax1.set_ylabel(signal_display1, color=color1)
+    ax1.set_xlabel("Date", fontsize=14)
+    ax1.set_ylabel(signal_display1, color=color1, fontsize=14)
     line1 = ax1.plot(
         df1["time_value"], df1["value"], color=color1, label=signal_display1
     )
@@ -113,7 +113,7 @@ def create_dual_axis_plot(df1, df2, signal_display1, signal_display2):
     # Create secondary y-axis and plot second signal
     ax2 = ax1.twinx()
     color2 = "#ff7f0e"  # Orange
-    ax2.set_ylabel(signal_display2, color=color2)
+    ax2.set_ylabel(signal_display2, color=color2, fontsize=14)
     line2 = ax2.plot(
         df2["time_value"], df2["value"], color=color2, label=signal_display2
     )
