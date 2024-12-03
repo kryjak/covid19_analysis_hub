@@ -103,7 +103,7 @@ def create_dual_axis_plot(df1, df2, signal_display1, signal_display2):
 
     # Plot first signal on primary y-axis
     color1 = "#1f77b4"  # Blue
-    ax1.set_xlabel("Time")
+    ax1.set_xlabel("Date")
     ax1.set_ylabel(signal_display1, color=color1)
     line1 = ax1.plot(
         df1["time_value"], df1["value"], color=color1, label=signal_display1
@@ -140,9 +140,6 @@ def create_dual_axis_plot(df1, df2, signal_display1, signal_display2):
 
     # Rotate and align the tick labels so they look better
     plt.setp(ax1.get_xticklabels(), rotation=45, ha="right")
-
-    # Add title
-    plt.title(f"Comparison of {signal_display1} vs {signal_display2}")
 
     # Adjust layout to prevent label cutoff
     plt.tight_layout()
