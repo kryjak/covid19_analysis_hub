@@ -198,10 +198,14 @@ if 'df1' in st.session_state and 'df2' in st.session_state:
             secondary_y=True,
         )
         
+        # Calculate ranges to ensure zero alignment
+        y1_min, y1_max = df1['value'].min(), df1['value'].max()
+        y2_min, y2_max = df2['value'].min(), df2['value'].max()
+        
         # Update layout
         fig.update_layout(
             title=f"Comparison of {signal_display1} vs {signal_display2} in {geo_type.capitalize()} {region_display}",
-            height=600,  # Fixed height
+            height=600,
             hovermode='x unified',
             legend=dict(
                 yanchor="top",
@@ -209,13 +213,18 @@ if 'df1' in st.session_state and 'df2' in st.session_state:
                 xanchor="left",
                 x=0.01
             ),
-            yaxis=dict(title=signal_display1),  # Add left y-axis title
-            yaxis2=dict(title=signal_display2)  # Add right y-axis title
+            yaxis=dict(
+                title=signal_display1,
+                range=[0, y1_max * 1.1]  # Add 10% padding
+            ),
+            yaxis2=dict(
+                title=signal_display2,
+                range=[0, y2_max * 1.1],  # Add 10% padding
+                anchor="x",
+                overlaying="y",
+                side="right"
+            )
         )
-
-        # Set both y-axes to start at 0 with matching grid
-        fig.update_yaxes(rangemode="tozero", secondary_y=False, zeroline=True, zerolinewidth=2)
-        fig.update_yaxes(rangemode="tozero", secondary_y=True, zeroline=True, zerolinewidth=2)
         
         return fig
     
