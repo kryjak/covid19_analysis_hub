@@ -158,21 +158,13 @@ st.divider()
 if 'df1' in st.session_state and 'df2' in st.session_state:
     plot_container = st.empty()
     
-    col1, col2 = st.columns([4, 1])
-    
-    with col1:
-        selected_lag = st.slider(
-            f"Time lag ({time_type}s)",
-            min_value=-max_lag,
-            max_value=max_lag,
-            value=0,  # Always start at 0
-            help=f"Shift signal 1 ({signal_display1}) forwards or backwards in time"
-        )
-    
-    with col2:
-        if st.button("Reset to 0"):
-            selected_lag = 0
-            st.rerun()
+    selected_lag = st.slider(
+        f"Time lag ({time_type}s)",
+        min_value=-max_lag,
+        max_value=max_lag,
+        value=0,  # Always start at 0
+        help=f"Shift signal 1 ({signal_display1}) forwards or backwards in time"
+    )
     
     def create_plotly_dual_axis(df1, df2, name1, name2):
         fig = make_subplots.make_subplots(specs=[[{"secondary_y": True}]])
@@ -198,14 +190,14 @@ if 'df1' in st.session_state and 'df2' in st.session_state:
             secondary_y=True,
         )
         
-        # Calculate ranges to ensure zero alignment
-        y1_min, y1_max = df1['value'].min(), df1['value'].max()
-        y2_min, y2_max = df2['value'].min(), df2['value'].max()
+        # Calculate the range for both y-axes to ensure they start at 0
+        y1_max = df1['value'].max()
+        y2_max = df2['value'].max()
         
         # Update layout
         fig.update_layout(
             title=f"Comparison of {signal_display1} vs {signal_display2} in {geo_type.capitalize()} {region_display}",
-            height=600,
+            height=600,  # Fixed height
             hovermode='x unified',
             legend=dict(
                 yanchor="top",
@@ -220,12 +212,11 @@ if 'df1' in st.session_state and 'df2' in st.session_state:
             yaxis2=dict(
                 title=signal_display2,
                 range=[0, y2_max * 1.1],  # Add 10% padding
-                anchor="x",
-                overlaying="y",
-                side="right"
+                scaleanchor="y",
+                scaleratio=y1_max/y2_max if y2_max != 0 else 1  # This ensures the scales are proportional
             )
         )
-        
+
         return fig
     
     def update_plot(lag):
