@@ -1,5 +1,9 @@
 import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 from available_signals import names_to_sources
+from datetime import date
+from epiweeks import Week
 
 covidcast_metadata = pd.read_csv("covidcast_metadata.csv")
 
@@ -63,5 +67,84 @@ def get_shared_dates(metadata, displayed_name1, displayed_name2, geo_type):
     return max(init_date1, init_date2), min(final_date1, final_date2), time_type1
 
 
-# init_date, final_date = get_shared_dates(covidcast_metadata, "Confirmed Covid-19 Hospitalizations (7-day avg., per 100k)", "Cases (7-day avg., per 100k)", "state")
-# print(init_date, final_date)
+def to_epidate_range(dt1: date, dt2: date) -> tuple[int, int]:
+    return int(dt1.strftime("%Y%m%d")), int(dt2.strftime("%Y%m%d"))
+
+
+def to_epiweek_range(dt1: date, dt2: date) -> tuple[int, int]:
+    start_week = Week.fromdate(dt1)
+    end_week = Week.fromdate(dt2)
+    start_year = start_week.year
+    end_year = end_week.year
+    return int(str(start_year) + str(start_week.week)), int(
+        str(end_year) + str(end_week.week)
+    )
+
+
+def create_dual_axis_plot(df1, df2, signal_display1, signal_display2):
+    """
+    Create a dual-axis plot with two y-axes based on the DataFrames from two signals.
+    Args:
+        df1: DataFrame with the first signal
+        df2: DataFrame with the second signal
+        signal_display1: Displayed name of the first signal
+        signal_display2: Displayed name of the second signal
+    Returns:
+        fig: The figure object containing the plot
+
+    Notes:
+        - The x-axis is formatted based on the date range of the data.
+        - Converts Unix timestamps to pandas datetime objects
+        - For ranges ≤ 90 days: Show individual days with weekly intervals
+        - For ranges ≤ 1 year: Show monthly intervals
+        - For ranges > 1 year: Show quarterly intervals
+    """
+    fig, ax1 = plt.subplots(figsize=(12, 6))
+
+    # Plot first signal on primary y-axis
+    color1 = "#1f77b4"  # Blue
+    ax1.set_xlabel("Time")
+    ax1.set_ylabel(signal_display1, color=color1)
+    line1 = ax1.plot(
+        df1["time_value"], df1["value"], color=color1, label=signal_display1
+    )
+    ax1.tick_params(axis="y", labelcolor=color1)
+
+    # Create secondary y-axis and plot second signal
+    ax2 = ax1.twinx()
+    color2 = "#ff7f0e"  # Orange
+    ax2.set_ylabel(signal_display2, color=color2)
+    line2 = ax2.plot(
+        df2["time_value"], df2["value"], color=color2, label=signal_display2
+    )
+    ax2.tick_params(axis="y", labelcolor=color2)
+
+    # Combine legends
+    lines = line1 + line2
+    labels = [line.get_label() for line in lines]
+    ax1.legend(lines, labels, loc="upper left")
+
+    # Format x-axis based on date range
+    date_range = (df1["time_value"].max() - df1["time_value"].min()).days
+    if date_range <= 90:  # For ranges up to 3 months
+        ax1.xaxis.set_major_locator(
+            mdates.DayLocator(interval=7)
+        )  # Show weekly intervals
+        ax1.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d"))
+    elif date_range <= 365:  # For ranges up to 1 year
+        ax1.xaxis.set_major_locator(mdates.MonthLocator())
+        ax1.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
+    else:  # For ranges over 1 year
+        ax1.xaxis.set_major_locator(mdates.MonthLocator(interval=3))  # Quarterly
+        ax1.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
+
+    # Rotate and align the tick labels so they look better
+    plt.setp(ax1.get_xticklabels(), rotation=45, ha="right")
+
+    # Add title
+    plt.title(f"Comparison of {signal_display1} vs {signal_display2}")
+
+    # Adjust layout to prevent label cutoff
+    plt.tight_layout()
+
+    return fig
