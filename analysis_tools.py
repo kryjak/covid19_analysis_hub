@@ -84,3 +84,12 @@ def calculate_epi_correlation(df1, df2, cor_by="geo_value", lag=0):
         corr_df = r.calculate_correlation(df, cor_by, lag)
 
     return corr_df
+
+def get_lags_and_correlations(df1, df2, cor_by="geo_value", max_lag=14):
+    lags_and_correlations = {}
+
+    for lag in range(-max_lag, max_lag + 1):
+        corr_df = calculate_epi_correlation(df1, df2, cor_by, lag)
+        lags_and_correlations[lag] = corr_df.iloc[0]["cor"]
+
+    return lags_and_correlations
