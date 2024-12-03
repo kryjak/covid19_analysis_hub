@@ -84,7 +84,7 @@ def to_epiweek_range(dt1: date, dt2: date) -> tuple[int, int]:
     )
 
 
-def create_plotly_dual_axis(df1, df2, name1, name2, title):
+def create_plotly_dual_axis(df1, df2, name1, name2, title, annotation_text):
     fig = make_subplots.make_subplots(specs=[[{"secondary_y": True}]])
     
     # Add traces with specific colors
@@ -136,7 +136,7 @@ def create_plotly_dual_axis(df1, df2, name1, name2, title):
     
     # Always add the lag annotation
     fig.add_annotation(
-        text=name1,
+        text=annotation_text,
         xref="paper", yref="paper",
         x=0.01, y=0.99,
         showarrow=False,
@@ -158,13 +158,15 @@ def update_plot_with_lag(df1, df2, signal_display1, signal_display2, geo_type, r
     df1_shifted['time_value'] = df1_shifted['time_value'] + timedelta(days=-lag_days)
     
     title = f"Comparison of {signal_display1} vs {signal_display2} in {geo_type.capitalize()} {region_display}"
-    
+    annotation_text = f"Time lag of {signal_display1}: {lag} {time_type}s"
+
     fig = create_plotly_dual_axis(
         df1_shifted, 
         df2, 
-        f"Time lag of {signal_display1}: {lag} {time_type}s", 
+        signal_display1,
         signal_display2,
-        title
+        title,
+        annotation_text
     )
     
     cor_df = calculate_epi_correlation(df1, df2, cor_by="geo_value", lag=lag_days)
