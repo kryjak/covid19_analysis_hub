@@ -24,7 +24,7 @@ from utils import (
     to_epiweek_range,
     create_dual_axis_plot,
 )
-from analysis_tools import fetch_covidcast_data
+from analysis_tools import fetch_covidcast_data, calculate_epi_correlation
 
 
 covidcast_metadata = pd.read_csv("covidcast_metadata.csv")
@@ -137,6 +137,7 @@ if st.button(
     disabled=not button_enabled,
     help="Click to fetch and analyze the selected signals",
 ):
+    st.divider()
     with st.spinner("Fetching data..."):
         # Load the R script containing your function
         df1 = fetch_covidcast_data(
@@ -145,8 +146,17 @@ if st.button(
         df2 = fetch_covidcast_data(
             geo_type, region, source2, signal2, date_range[0], date_range[1], time_type
         )
-
         fig = create_dual_axis_plot(df1, df2, signal_display1, signal_display2)
+        fig.suptitle(
+            f"Comparison of {signal_display1} vs {signal_display2} in {geo_type.capitalize()} {region_display}",
+            fontsize=16,
+            fontweight="bold",
+            y=1.05,
+        )
         st.pyplot(fig)
+
+    with st.spinner("Calculating correlation..."):
+        cor_df = calculate_epi_correlation(df1, df2, cor_by="geo_value")
+        st.write(f'Signal correlation: **{cor_df.iloc[0]["cor"].round(3)}**')
 
 st.divider()
