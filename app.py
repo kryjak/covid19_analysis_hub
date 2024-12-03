@@ -24,7 +24,10 @@ from utils import (
     to_epiweek_range,
     update_plot_with_lag,
 )
-from analysis_tools import fetch_covidcast_data
+from analysis_tools import (
+    fetch_covidcast_data,
+    get_lags_and_correlations,
+)
 
 covidcast_metadata = pd.read_csv("covidcast_metadata.csv")
 
@@ -148,7 +151,7 @@ if st.button(
             geo_type, region, source2, signal2, date_range[0], date_range[-1], time_type
         )
 
-st.divider()
+    st.divider()
 
 # Only show the lag slider and plot if we have data
 if 'df1' in st.session_state and 'df2' in st.session_state:
@@ -179,4 +182,17 @@ if 'df1' in st.session_state and 'df2' in st.session_state:
     
     st.write(f'Signal correlation at lag {selected_lag} {time_type}s: **{new_correlation}**')
 
-st.divider()
+    st.divider()
+
+    if st.button("Calculate best time lag",
+                type="primary",
+                help="Calculate the time lag that maximises the correlation between the two signals"):
+        with st.spinner("This might take a while (up to ~2mins for the full data range)..."):
+            lags_and_correlations = get_lags_and_correlations(st.session_state.df1, st.session_state.df2, cor_by="geo_value", max_lag=max_lag)
+        best_lag = max(lags_and_correlations, key=lags_and_correlations.get)
+        best_correlation = lags_and_correlations[best_lag]
+        st.write(f"Best time lag: **{best_lag} {time_type}s**")
+        st.write(f"Best correlation: **{best_correlation:.3f}**")
+        
+        # in two columns, plot:
+        
