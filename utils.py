@@ -117,22 +117,33 @@ def create_plotly_dual_axis(df1, df2, name1, name2, title):
         title=title,
         height=600,  # Fixed height
         hovermode='x unified',
-        legend=dict(
-            yanchor="top",
-            y=0.99,
-            xanchor="left",
-            x=0.01
-        ),
+        showlegend=False,  # Remove legend
         yaxis=dict(
             title=name1,
-            range=[0, y1_max * 1.1]  # Add 10% padding
+            range=[0, y1_max * 1.1],  # Add 10% padding
+            title_font=dict(color='#1f77b4'),  # Match trace color
+            tickfont=dict(color='#1f77b4')
         ),
         yaxis2=dict(
             title=name2,
             range=[0, y2_max * 1.1],  # Add 10% padding
+            title_font=dict(color='#ff7f0e'),  # Match trace color
+            tickfont=dict(color='#ff7f0e'),
             scaleanchor="y",
             scaleratio=y1_max/y2_max if y2_max != 0 else 1
         )
+    )
+    
+    # Always add the lag annotation
+    fig.add_annotation(
+        text=name1,
+        xref="paper", yref="paper",
+        x=0.01, y=0.99,
+        showarrow=False,
+        font=dict(color='#1f77b4'),
+        bgcolor="rgba(255, 255, 255, 0.8)",
+        bordercolor='#1f77b4',
+        borderwidth=1
     )
     
     return fig
@@ -151,7 +162,7 @@ def update_plot_with_lag(df1, df2, signal_display1, signal_display2, geo_type, r
     fig = create_plotly_dual_axis(
         df1_shifted, 
         df2, 
-        f"{signal_display1} (lag: {lag} {time_type}s)", 
+        f"Time lag of {signal_display1}: {lag} {time_type}s", 
         signal_display2,
         title
     )
