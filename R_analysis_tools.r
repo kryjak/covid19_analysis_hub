@@ -18,12 +18,13 @@ fetch_covidcast_data <- function(
   return(response)
 }
 
-calculate_correlation <- function(df, cor_by="geo_value") {
+calculate_correlation <- function(df, cor_by="geo_value", lag=0) {
   df <- as_epi_df(df)
   cor_value <- epi_cor(df,
                     value1,
                     value2,
-                    cor_by=cor_by)
+                    cor_by=cor_by,
+                    dt1=lag)
 
   return(cor_value)
 

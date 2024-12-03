@@ -75,12 +75,12 @@ def merge_dataframes(df1, df2):
     return merged_df[final_columns]
 
 
-def calculate_epi_correlation(df1, df2, cor_by="geo_value"):
+def calculate_epi_correlation(df1, df2, cor_by="geo_value", lag=0):
     df = merge_dataframes(df1, df2)
 
     with conversion.localconverter(default_converter + pandas2ri.converter):
         r.source("R_analysis_tools.r")
 
-        corr_df = r.calculate_correlation(df, cor_by)
+        corr_df = r.calculate_correlation(df, cor_by, lag)
 
     return corr_df
