@@ -22,11 +22,17 @@ from utils import (
     get_shared_dates,
     to_epidate_range,
     to_epiweek_range,
-    update_plot_with_lag,
 )
+
 from analysis_tools import (
     fetch_covidcast_data,
     get_lags_and_correlations,
+)
+
+from plotting_utils import (
+    update_plot_with_lag,
+    plot_correlation_vs_lag,
+    plot_correlation_distribution,
 )
 
 covidcast_metadata = pd.read_csv("covidcast_metadata.csv")
@@ -141,7 +147,6 @@ if st.button(
     disabled=not button_enabled,
     help="Click to fetch and analyze the selected signals",
 ):
-    st.divider()
     with st.spinner("Fetching data..."):
         # Store the fetched data in session state
         st.session_state.df1 = fetch_covidcast_data(
@@ -205,4 +210,11 @@ if "df1" in st.session_state and "df2" in st.session_state:
         st.write(f"Best time lag: **{best_lag} {time_type}s**")
         st.write(f"Best correlation: **{best_correlation:.3f}**")
 
-        # in two columns, plot:
+        col1, col2 = st.columns(2, gap="large")
+        with col1:
+            fig1 = plot_correlation_vs_lag(lags_and_correlations, time_type)
+            st.plotly_chart(fig1, use_container_width=True)
+            
+        with col2:
+            fig2 = plot_correlation_distribution(lags_and_correlations)
+            st.plotly_chart(fig2, use_container_width=True)
