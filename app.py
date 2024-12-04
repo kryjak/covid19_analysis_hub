@@ -35,6 +35,8 @@ from plotting_utils import (
     plot_correlation_distribution,
 )
 
+from helper_texts import get_correlation_method_info
+
 covidcast_metadata = pd.read_csv("covidcast_metadata.csv")
 
 st.title("COVID-19 Signal Correlation and Forecast Analysis")
@@ -170,7 +172,18 @@ if "df1" in st.session_state and "df2" in st.session_state:
         help=f"Shift signal 1 ({signal_display1}) forwards or backwards in time",
     )
 
-    # Update plot based on current lag
+    # Add the correlation method selection here
+    correlation_method = st.radio(
+        "Select correlation method:",
+        ["Pearson", "Kendall", "Spearman"],
+        help="Choose the statistical method for calculating correlation between signals.",
+        key="correlation_method"
+    ).lower()
+
+    # Show the help text for the selected method
+    st.info(get_correlation_method_info(correlation_method))
+
+    # Update plot based on current lag and selected correlation method
     new_fig, new_correlation = update_plot_with_lag(
         st.session_state.df1,
         st.session_state.df2,
@@ -180,6 +193,7 @@ if "df1" in st.session_state and "df2" in st.session_state:
         region_display,
         selected_lag,
         time_type,
+        correlation_method  # Pass the selected method
     )
 
     with plot_container:
@@ -204,6 +218,7 @@ if "df1" in st.session_state and "df2" in st.session_state:
                 st.session_state.df2,
                 cor_by="geo_value",
                 max_lag=max_lag,
+                method=correlation_method  # Pass the selected method
             )
         best_lag = max(lags_and_correlations, key=lags_and_correlations.get)
         best_correlation = lags_and_correlations[best_lag]

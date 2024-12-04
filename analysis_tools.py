@@ -76,18 +76,18 @@ def merge_dataframes(df1, df2):
     return merged_df[final_columns]
 
 
-def calculate_epi_correlation(df1, df2, cor_by="geo_value", lag=0):
+def calculate_epi_correlation(df1, df2, cor_by="geo_value", lag=0, method="pearson"):
     df = merge_dataframes(df1, df2)
 
     with conversion.localconverter(default_converter + pandas2ri.converter):
         r.source("R_analysis_tools.r")
 
-        corr_df = r.calculate_correlation(df, cor_by, lag)
+        corr_df = r.calculate_correlation(df, cor_by, lag, method)
 
     return corr_df
 
 
-def get_lags_and_correlations(df1, df2, cor_by="geo_value", max_lag=14):
+def get_lags_and_correlations(df1, df2, cor_by="geo_value", max_lag=14, method="pearson"):
     # Merge once at the beginning
     merged_df = merge_dataframes(df1, df2)
 
@@ -105,7 +105,7 @@ def get_lags_and_correlations(df1, df2, cor_by="geo_value", max_lag=14):
             r.source("R_analysis_tools.r")
             
             for i, lag in enumerate(range(-max_lag, max_lag + 1)):
-                corr = r.calculate_correlation(r_df, cor_by, lag)
+                corr = r.calculate_correlation(r_df, cor_by, lag, method)
                 lags_and_correlations[lag] = corr.iloc[0]["cor"]
                 
                 # Update progress

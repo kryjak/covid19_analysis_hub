@@ -73,7 +73,7 @@ def create_plotly_dual_axis(df1, df2, name1, name2, title, annotation_text):
 
 
 def update_plot_with_lag(
-    df1, df2, signal_display1, signal_display2, geo_type, region_display, lag, time_type
+    df1, df2, signal_display1, signal_display2, geo_type, region_display, lag, time_type, correlation_method
 ):
     lag_days = lag if time_type == "day" else lag * 7
     # the shift in the displayed signal1 is opposite to lag_days
@@ -90,7 +90,7 @@ def update_plot_with_lag(
         df1_shifted, df2, signal_display1, signal_display2, title, annotation_text
     )
 
-    cor_df = calculate_epi_correlation(df1, df2, cor_by="geo_value", lag=lag_days)
+    cor_df = calculate_epi_correlation(df1, df2, cor_by="geo_value", lag=lag_days, method=correlation_method)
     return fig, cor_df.iloc[0]["cor"].round(3)
 
 
