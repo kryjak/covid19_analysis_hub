@@ -6,14 +6,14 @@ set -e
 # Print commands as they are executed
 set -x
 
-# Check R installation
+echo "=============== Checking R installation ==============="
 R --version
 
-# Run R requirements and save output to a log file
-Rscript r_requirements.R 2>&1 | tee r_install.log
+echo "=============== Installing R packages ==============="
+Rscript r_requirements.R
 
-# List installed R packages
-Rscript -e "installed.packages()" 2>&1 | tee installed_packages.log
+echo "=============== Listing installed R packages ==============="
+Rscript -e "installed.packages()"
 
-# Try to load epidatr specifically
-Rscript -e "library(epidatr)" 2>&1 | tee epidatr_test.log
+echo "=============== Testing epidatr installation ==============="
+Rscript -e "library(epidatr)"
