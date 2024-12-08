@@ -6,14 +6,20 @@ set -e
 # Print commands as they are executed
 set -x
 
-echo "=============== Checking R installation ==============="
-R --version
+echo "=============== Installing system dependencies ==============="
+apt-get update && apt-get install -y \
+    r-base \
+    r-base-dev \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    libxml2-dev
 
-echo "=============== Installing R packages ==============="
-Rscript r_requirements.R
+echo "=============== Installing Delphi R packages ==============="
+# First install devtools as it's needed for some dependencies
+R -e "install.packages('devtools', repos='https://cloud.r-project.org/')"
 
-echo "=============== Listing installed R packages ==============="
-Rscript -e "installed.packages()"
+# Install all required Delphi packages
+R -e "install.packages(c('epidatr', 'epiprocess', 'epidatasets', 'epipredict'), repos=c('https://cmu-delphi.github.io/delphi.github.io/r', 'https://cloud.r-project.org/'), dependencies=TRUE)"
 
-echo "=============== Testing epidatr installation ==============="
-Rscript -e "library(epidatr)"
+echo "=============== Verifying installations ==============="
+R -e "library(epidatr); library(epiprocess); library(epidatasets); library(epipredict)"
