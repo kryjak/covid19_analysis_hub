@@ -1,5 +1,5 @@
-# Use an Ubuntu base image
-FROM ubuntu:22.04
+# Use Ubuntu 24.04 (Noble) base image
+FROM ubuntu:24.04
 
 # Avoid timezone prompts
 ENV DEBIAN_FRONTEND=noninteractive
@@ -8,6 +8,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-dev \
+    python3-venv \
     r-base \
     r-base-dev \
     libcurl4-openssl-dev \
@@ -22,12 +23,15 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Create a requirements file without rpy2
-COPY requirements.txt .
-RUN grep -v "rpy2" requirements.txt > requirements_no_rpy2.txt
+# Create and activate virtual environment with access to system packages
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV --system-site-packages
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# Install Python dependencies (excluding rpy2)
-RUN pip3 install --no-cache-dir -r requirements_no_rpy2.txt
+# Install Python dependencies (excluding rpy2 since we installed it via apt)
+COPY requirements.txt .
+RUN grep -v "rpy2" requirements.txt > requirements_no_rpy2.txt && \
+    pip install --no-cache-dir -r requirements_no_rpy2.txt
 
 # Install R packages
 RUN R -e '\
