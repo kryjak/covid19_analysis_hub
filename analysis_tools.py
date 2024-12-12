@@ -31,49 +31,69 @@ def fetch_covidcast_data(
     return df
 
 
-def merge_dataframes(df1, df2):
-    # Verify that geo_type, geo_value, and time_type match
-    if not all(
-        df1[key].unique()[0] == df2[key].unique()[0]
-        for key in ["geo_type", "geo_value", "time_type"]
-    ):
-        raise ValueError(
-            "geo_type, geo_value and time_type must match between datasets"
-        )
+def merge_dataframes(*dfs):
+    """
+    Merge multiple dataframes containing COVIDcast data.
+    
+    Args:
+        *dfs: Variable number of pandas DataFrames to merge
+        
+    Returns:
+        pandas DataFrame: Merged dataframe with data from all input dataframes
+    """
+    if len(dfs) < 2:
+        raise ValueError("At least two dataframes are required for merging")
 
-    # Create merged dataframe with selected columns
-    merged_df = pd.merge(
-        df1[
-            [
-                "source",
-                "signal",
-                "geo_type",
-                "geo_value",
-                "time_type",
-                "time_value",
-                "value",
-            ]
-        ],
-        df2[["source", "signal", "time_value", "value"]],
-        on="time_value",
-        suffixes=("1", "2"),
-    )
+    # Verify that geo_type, geo_value, and time_type match across all dataframes
+    base_df = dfs[0]
+    for key in ["geo_type", "geo_value", "time_type"]:
+        base_value = base_df[key].unique()[0]
+        if not all(df[key].unique()[0] == base_value for df in dfs[1:]):
+            raise ValueError(
+                f"{key} must match across all datasets"
+            )
 
-    # Reorder columns as specified
-    final_columns = [
-        "source1",
-        "signal1",
-        "source2",
-        "signal2",
+    # Start with the first dataframe
+    result = dfs[0][[
+        "source",
+        "signal",
         "geo_type",
         "geo_value",
         "time_type",
         "time_value",
-        "value1",
-        "value2",
-    ]
+        "value"
+    ]].copy()
 
-    return merged_df[final_columns]
+    # Merge with remaining dataframes
+    for i, df in enumerate(dfs[1:], 1):
+        result = pd.merge(
+            result,
+            df[["source", "signal", "time_value", "value"]],
+            on="time_value",
+            suffixes=(str(i-1) if i > 1 else "", str(i))
+        )
+
+    # Rename columns for the first dataframe (which didn't get a suffix)
+    result = result.rename(columns={
+        "source": "source0",
+        "signal": "signal0",
+        "value": "value0"
+    })
+
+    # Create final column order
+    source_signal_columns = []
+    value_columns = []
+    for i in range(len(dfs)):
+        source_signal_columns.extend([f"source{i}", f"signal{i}"])
+        value_columns.append(f"value{i}")
+
+    final_columns = (
+        source_signal_columns +
+        ["geo_type", "geo_value", "time_type", "time_value"] +
+        value_columns
+    )
+
+    return result[final_columns]
 
 
 def calculate_epi_correlation(df1, df2, cor_by="geo_value", lag=0, method="pearson"):
