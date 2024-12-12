@@ -1,8 +1,8 @@
 # Displayed name -> (source, signal)
 
 names_to_sources = {
-    "Deaths (7-day avg., per 100k)": ("jhu-csse", "deaths_7dav_incidence_prop"),
     "Cases (7-day avg., per 100k)": ("jhu-csse", "confirmed_7dav_incidence_prop"),
+    "Deaths (7-day avg., per 100k)": ("jhu-csse", "deaths_7dav_incidence_prop"),
     "Confirmed Covid-19 Hospitalizations (7-day avg., per 100k)": (
         "hhs",
         "confirmed_admissions_covid_1d_prop_7dav",

@@ -20,11 +20,25 @@ def get_signal_geotypes(metadata, source_and_signal):
     return geo_types
 
 
-def get_shared_geotypes(metadata, source_and_signal1, source_and_signal2):
-    geo_types1 = get_signal_geotypes(metadata, source_and_signal1)
-    geo_types2 = get_signal_geotypes(metadata, source_and_signal2)
-
-    return list(set(geo_types1) & set(geo_types2))
+def get_shared_geotypes(metadata, *source_and_signals):
+    """
+    Get geo_types shared across multiple signals.
+    
+    Args:
+        metadata: COVIDcast metadata DataFrame
+        *source_and_signals: Variable number of (source, signal) tuples
+    """
+    if len(source_and_signals) < 2:
+        raise ValueError("At least two source-signal pairs are required")
+        
+    # Get geo_types for each source-signal pair
+    all_geo_types = [
+        set(get_signal_geotypes(metadata, source_signal))
+        for source_signal in source_and_signals
+    ]
+    
+    # Find intersection of all sets
+    return list(set.intersection(*all_geo_types))
 
 
 def get_signal_dates(metadata, source_and_signal, geo_type, return_time_type=False):
@@ -50,18 +64,34 @@ def get_signal_dates(metadata, source_and_signal, geo_type, return_time_type=Fal
     return init_date, final_date, time_type
 
 
-def get_shared_dates(metadata, source_and_signal1, source_and_signal2, geo_type):
-    init_date1, final_date1, time_type1 = get_signal_dates(
-        metadata, source_and_signal1, geo_type, return_time_type=True
-    )
-    init_date2, final_date2, time_type2 = get_signal_dates(
-        metadata, source_and_signal2, geo_type, return_time_type=True
-    )
-
-    if time_type1 != time_type2:
-        raise ValueError
-
-    return max(init_date1, init_date2), min(final_date1, final_date2), time_type1
+def get_shared_dates(metadata, geo_type, *source_and_signals):
+    """
+    Get overlapping date range and verify time_type matches across signals.
+    
+    Args:
+        metadata: COVIDcast metadata DataFrame
+        geo_type: Geographic type to check
+        *source_and_signals: Variable number of (source, signal) tuples
+    """
+    if len(source_and_signals) < 2:
+        raise ValueError("At least two source-signal pairs are required")
+    
+    # Get dates and time_types for all signals
+    date_ranges = [
+        get_signal_dates(metadata, source_signal, geo_type, return_time_type=True)
+        for source_signal in source_and_signals
+    ]
+    
+    # Verify all time_types match
+    time_types = [dates[2] for dates in date_ranges]
+    if not all(tt == time_types[0] for tt in time_types):
+        raise ValueError("All signals must have the same time_type")
+    
+    # Find overlapping date range
+    init_date = max(dates[0] for dates in date_ranges)
+    final_date = min(dates[1] for dates in date_ranges)
+    
+    return init_date, final_date, time_types[0]
 
 
 def to_epidate_range(dt1: date, dt2: date) -> tuple[int, int]:
