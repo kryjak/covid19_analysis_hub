@@ -67,7 +67,7 @@ all_sources_and_signals = list(names_to_sources.values())
 st.markdown("📊 **Select two signals:**")
 col1, col2 = st.columns(2)
 with col1:
-    source_and_signal1 = st.selectbox("Choose signal 1:", all_sources_and_signals, label_visibility="collapsed", format_func=lambda x: sources_to_names[x])
+    source_and_signal1 = st.selectbox("Choose signal 1:", all_sources_and_signals, label_visibility="collapsed", format_func=lambda x: sources_to_names[x], index=0)
     # label_visibility="collapsed" might be disallowed in the future
     # https://docs.streamlit.io/develop/api-reference/widgets/st.selectbox
 with col2:
@@ -75,7 +75,7 @@ with col2:
         "Choose signal 2:",
         [signal for signal in all_sources_and_signals if signal != source_and_signal1],
         label_visibility="collapsed",
-        format_func=lambda x: sources_to_names[x]
+        format_func=lambda x: sources_to_names[x], index=1
     )
 
 shared_geo_types = get_shared_geotypes(
@@ -139,7 +139,7 @@ with col2:
 
 try:
     shared_init_date, shared_final_date, time_type = get_shared_dates(
-        covidcast_metadata, source_and_signal1, source_and_signal2, geo_type
+        covidcast_metadata, geo_type, source_and_signal1, source_and_signal2
     )
 except ValueError:
     st.error(
