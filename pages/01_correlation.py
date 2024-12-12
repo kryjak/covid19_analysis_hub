@@ -37,9 +37,30 @@ from plotting_utils import (
 
 from helper_texts import get_correlation_method_info
 
-covidcast_metadata = pd.read_csv("covidcast_metadata.csv")
+st.set_page_config(page_title="Signal Correlation Analysis", page_icon="🦠", layout="wide")
 
-st.title("COVID-19 Signal Correlation and Forecast Analysis")
+covidcast_metadata = pd.read_csv("csv_data/covidcast_metadata.csv")
+
+col1, col2 = st.columns([1, 8])
+with col1:
+    st.page_link("Home.py", label="← Back to Home")
+with col2:
+    if st.button("ℹ️ Help", type="secondary"):
+        st.info("""
+        ### How to use this tool
+        1. Select two different COVID-19 signals to compare
+        2. Choose a geographic level (nation, state, county, etc.)
+        3. Select your region of interest
+        4. Choose a date range for analysis
+        5. Click 'Fetch Data' to load and visualize the signals
+        6. Adjust the time lag slider to explore temporal relationships
+        7. Use 'Calculate best time lag' to find the optimal correlation
+
+        The tool supports different correlation methods (Pearson, Kendall, Spearman) 
+        and allows you to explore how signals relate to each other across time.
+        """)
+
+st.title("COVID-19 Signal Correlation Analysis")
 st.write("This app allows you to explore the correlation between two COVID-19 signals.")
 
 signals_display = list(names_to_sources.keys())
