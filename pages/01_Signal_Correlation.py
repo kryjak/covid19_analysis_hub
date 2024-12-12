@@ -35,7 +35,7 @@ from plotting_utils import (
     plot_correlation_distribution,
 )
 
-from helper_texts import correlation_method_info
+from helper_texts import correlation_method_info, correlation_page_helpers, helper_content
 
 st.set_page_config(page_title="Signal Correlation Analysis", page_icon="🦠", layout="wide")
 
@@ -50,31 +50,17 @@ with col3:
     if 'show_help' not in st.session_state:
         st.session_state.show_help = False
     
-    if st.button("🛈\nHelp", type="secondary"):
+    if st.button("🛈\nHelp", type="secondary", key="help_button_1"):
         st.session_state.show_help = not st.session_state.show_help
 
-# Show help info based on session state
-if st.session_state.show_help:
-    st.info("""
-    ### How to use this tool
-    1. Select two different COVID-19 signals to compare
-    2. Choose a geographic level (nation, state, county, etc.)
-    3. Select your region of interest
-    4. Choose a date range for analysis
-    5. Click 'Fetch Data' to load and visualize the signals
-    6. Adjust the time lag slider to explore temporal relationships
-    7. Use 'Calculate best time lag' to find the optimal correlation
-
-    The tool supports different correlation methods (Pearson, Kendall, Spearman) 
-    and allows you to explore how signals relate to each other across time.
-    """)
-
 st.markdown("""
-    <div style="background-color: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 2rem;">
-        <h1>COVID-19 Signal Correlation Analysis</h1>
-        <p>This app allows you to explore the correlation between two COVID-19 signals.</p>
+    <div style="background-color: rgba(255,165,0,0.1); padding: 0.5rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+        <h2 style="margin: 0;">COVID-19 Signal Correlation Analysis</h2>
     </div>
 """, unsafe_allow_html=True)
+
+if st.session_state.show_help:
+    st.markdown(helper_content.format(text=correlation_page_helpers["help_1"]), unsafe_allow_html=True)
 
 signals_display = list(names_to_sources.keys())
 
@@ -204,22 +190,33 @@ if "df1" in st.session_state and "df2" in st.session_state:
     plot_container = st.empty()
 
     selected_lag = st.slider(
-        f"Time lag ({time_type}s)",
+        f"📅 **Time lag ({time_type}s):**",
         min_value=-max_lag,
         max_value=max_lag,
         value=0,
         help=f"Shift signal 1 ({signal_display1}) forwards or backwards in time",
     )
 
-    # Add the correlation method selection here
-    correlation_method = st.radio(
-        "Select correlation method:",
-        ["Pearson", "Kendall", "Spearman"],
-        help="Choose the statistical method for calculating correlation between signals.",
-        key="correlation_method"
-    ).lower()
+    col1, col2, col3 = st.columns([5, 3, 1.4])
+    with col1:
+        # Add the correlation method selection here
+        correlation_method = st.radio(
+            "📈 **Select correlation method:**",
+            ["Pearson", "Kendall", "Spearman"],
+            help="Choose the statistical method for calculating correlation between signals.",
+            key="correlation_method"
+        ).lower()
+    with col3:
+        # Store the help button state in session state
+        if 'show_help_2' not in st.session_state:
+            st.session_state.show_help_2 = False
 
-    # Show the help text for the selected method
+        if st.button("🛈\nHelp", type="secondary", key="help_button_2"):
+            st.session_state.show_help_2 = not st.session_state.show_help_2
+
+    if st.session_state.show_help_2:
+        st.markdown(helper_content.format(text=correlation_page_helpers["help_2"]), unsafe_allow_html=True)
+
     st.info(correlation_method_info[correlation_method])
 
     # Update plot based on current lag and selected correlation method
