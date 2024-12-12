@@ -47,11 +47,11 @@ with col1:
     st.page_link("Home.py", label="← Back to Home")
 with col3:
     # Store the help button state in session state
-    if 'show_help' not in st.session_state:
-        st.session_state.show_help = False
+    if 'show_help_corr_1' not in st.session_state:
+        st.session_state.show_help_corr_1 = False
     
     if st.button("🛈\nHelp", type="secondary", key="help_button_1"):
-        st.session_state.show_help = not st.session_state.show_help
+        st.session_state.show_help_corr_1 = not st.session_state.show_help_corr_1
 
 st.markdown("""
     <div style="background-color: rgba(255,165,0,0.1); padding: 0.5rem; border-radius: 0.5rem; margin-bottom: 1rem;">
@@ -59,7 +59,7 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-if st.session_state.show_help:
+if st.session_state.show_help_corr_1:
     st.markdown(helper_content.format(text=correlation_page_helpers["help_1"]), unsafe_allow_html=True)
 
 signals_display = list(names_to_sources.keys())
@@ -208,13 +208,13 @@ if "df1" in st.session_state and "df2" in st.session_state:
         ).lower()
     with col3:
         # Store the help button state in session state
-        if 'show_help_2' not in st.session_state:
-            st.session_state.show_help_2 = False
+        if 'show_help_corr_2' not in st.session_state:
+            st.session_state.show_help_corr_2 = False
 
         if st.button("🛈\nHelp", type="secondary", key="help_button_2"):
-            st.session_state.show_help_2 = not st.session_state.show_help_2
+            st.session_state.show_help_corr_2 = not st.session_state.show_help_corr_2
 
-    if st.session_state.show_help_2:
+    if st.session_state.show_help_corr_2:
         st.markdown(helper_content.format(text=correlation_page_helpers["help_2"]), unsafe_allow_html=True)
 
     st.info(correlation_method_info[correlation_method])
