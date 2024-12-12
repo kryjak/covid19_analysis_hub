@@ -3,7 +3,7 @@ from available_signals import names_to_sources
 from datetime import date
 from epiweeks import Week
 
-covidcast_metadata = pd.read_csv("covidcast_metadata.csv")
+covidcast_metadata = pd.read_csv("csv_data/covidcast_metadata.csv")
 
 
 def load_data(source, signal):
