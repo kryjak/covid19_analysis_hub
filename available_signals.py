@@ -1,8 +1,8 @@
 # Displayed name -> (source, signal)
 
 names_to_sources = {
-    "Cases (7-day avg., per 100k)": ("jhu-csse", "confirmed_7dav_incidence_prop"),
     "Deaths (7-day avg., per 100k)": ("jhu-csse", "deaths_7dav_incidence_prop"),
+    "Cases (7-day avg., per 100k)": ("jhu-csse", "confirmed_7dav_incidence_prop"),
     "Confirmed Covid-19 Hospitalizations (7-day avg., per 100k)": (
         "hhs",
         "confirmed_admissions_covid_1d_prop_7dav",
@@ -21,3 +21,5 @@ names_to_sources = {
     ),
     "Total PCR Tests (7-day avg.)": ("covid-act-now", "pcr_specimen_total_tests"),
 }
+
+sources_to_names = {v: k for k, v in names_to_sources.items()}

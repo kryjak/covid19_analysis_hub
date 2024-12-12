@@ -6,8 +6,10 @@ import streamlit as st
 
 
 def fetch_covidcast_data(
-    geo_type, geo_value, source, signal, init_date, final_date, time_type
+    geo_type, geo_value, source_and_signal, init_date, final_date, time_type
 ):
+    source, signal = source_and_signal
+
     with conversion.localconverter(default_converter + pandas2ri.converter):
         r.source("R_analysis_tools.r")
 

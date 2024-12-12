@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from available_signals import names_to_sources
+from available_signals import names_to_sources, sources_to_names
 from geo_codes import (
     geotypes_to_display,
     display_to_geotypes,
@@ -62,25 +62,24 @@ st.markdown("""
 if st.session_state.show_help_corr_1:
     st.markdown(helper_content.format(text=correlation_page_helpers["help_1"]), unsafe_allow_html=True)
 
-signals_display = list(names_to_sources.keys())
+all_sources_and_signals = list(names_to_sources.values())
 
 st.markdown("📊 **Select two signals:**")
 col1, col2 = st.columns(2)
 with col1:
-    signal_display1 = st.selectbox("Choose signal 1:", signals_display, label_visibility="collapsed")
+    source_and_signal1 = st.selectbox("Choose signal 1:", all_sources_and_signals, label_visibility="collapsed", format_func=lambda x: sources_to_names[x])
     # label_visibility="collapsed" might be disallowed in the future
     # https://docs.streamlit.io/develop/api-reference/widgets/st.selectbox
-    source1, signal1 = names_to_sources[signal_display1]
 with col2:
-    signal_display2 = st.selectbox(
+    source_and_signal2 = st.selectbox(
         "Choose signal 2:",
-        [signal for signal in signals_display if signal != signal_display1],
-        label_visibility="collapsed"
+        [signal for signal in all_sources_and_signals if signal != source_and_signal1],
+        label_visibility="collapsed",
+        format_func=lambda x: sources_to_names[x]
     )
-    source2, signal2 = names_to_sources[signal_display2]
 
 shared_geo_types = get_shared_geotypes(
-    covidcast_metadata, signal_display1, signal_display2
+    covidcast_metadata, source_and_signal1, source_and_signal2
 )
 shared_geo_types_display = [
     geotypes_to_display[geo_type] for geo_type in shared_geo_types
@@ -140,7 +139,7 @@ with col2:
 
 try:
     shared_init_date, shared_final_date, time_type = get_shared_dates(
-        covidcast_metadata, signal_display1, signal_display2, geo_type
+        covidcast_metadata, source_and_signal1, source_and_signal2, geo_type
     )
 except ValueError:
     st.error(
@@ -166,7 +165,7 @@ else:
     st.error(f"Invalid time_type: {time_type}", icon="🚨")
     st.stop()
 
-button_enabled = signal1 != signal2 and geo_type != "dma" and "region" in locals()
+button_enabled = source_and_signal1 != source_and_signal2 and geo_type != "dma" and "region" in locals()
 
 if st.button(
     "Fetch Data",
@@ -177,10 +176,10 @@ if st.button(
     with st.spinner("Fetching data..."):
         # Store the fetched data in session state
         st.session_state.df1 = fetch_covidcast_data(
-            geo_type, region, source1, signal1, date_range[0], date_range[-1], time_type
+            geo_type, region, source_and_signal1, date_range[0], date_range[-1], time_type
         )
         st.session_state.df2 = fetch_covidcast_data(
-            geo_type, region, source2, signal2, date_range[0], date_range[-1], time_type
+            geo_type, region, source_and_signal2, date_range[0], date_range[-1], time_type
         )
 
     st.divider()
@@ -194,7 +193,7 @@ if "df1" in st.session_state and "df2" in st.session_state:
         min_value=-max_lag,
         max_value=max_lag,
         value=0,
-        help=f"Shift signal 1 ({signal_display1}) forwards or backwards in time",
+        help=f"Shift signal 1 ({sources_to_names[source_and_signal1]}) forwards or backwards in time",
     )
 
     col1, col2, col3 = st.columns([5, 3, 1.4])
@@ -223,8 +222,8 @@ if "df1" in st.session_state and "df2" in st.session_state:
     new_fig, new_correlation = update_plot_with_lag(
         st.session_state.df1,
         st.session_state.df2,
-        signal_display1,
-        signal_display2,
+        sources_to_names[source_and_signal1],
+        sources_to_names[source_and_signal2],
         geo_type,
         region_display,
         selected_lag,
