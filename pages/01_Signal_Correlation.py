@@ -35,44 +35,61 @@ from plotting_utils import (
     plot_correlation_distribution,
 )
 
-from helper_texts import get_correlation_method_info
+from helper_texts import correlation_method_info
 
 st.set_page_config(page_title="Signal Correlation Analysis", page_icon="🦠", layout="wide")
 
 covidcast_metadata = pd.read_csv("csv_data/covidcast_metadata.csv")
 
-col1, col2 = st.columns([1, 8])
+# Create header with better spacing and right-aligned help button
+col1, col2, col3 = st.columns([1, 6, 1.2])
 with col1:
     st.page_link("Home.py", label="← Back to Home")
-with col2:
-    if st.button("ℹ️ Help", type="secondary"):
-        st.info("""
-        ### How to use this tool
-        1. Select two different COVID-19 signals to compare
-        2. Choose a geographic level (nation, state, county, etc.)
-        3. Select your region of interest
-        4. Choose a date range for analysis
-        5. Click 'Fetch Data' to load and visualize the signals
-        6. Adjust the time lag slider to explore temporal relationships
-        7. Use 'Calculate best time lag' to find the optimal correlation
+with col3:
+    # Store the help button state in session state
+    if 'show_help' not in st.session_state:
+        st.session_state.show_help = False
+    
+    if st.button("🛈\nHelp", type="secondary"):
+        st.session_state.show_help = not st.session_state.show_help
 
-        The tool supports different correlation methods (Pearson, Kendall, Spearman) 
-        and allows you to explore how signals relate to each other across time.
-        """)
+# Show help info based on session state
+if st.session_state.show_help:
+    st.info("""
+    ### How to use this tool
+    1. Select two different COVID-19 signals to compare
+    2. Choose a geographic level (nation, state, county, etc.)
+    3. Select your region of interest
+    4. Choose a date range for analysis
+    5. Click 'Fetch Data' to load and visualize the signals
+    6. Adjust the time lag slider to explore temporal relationships
+    7. Use 'Calculate best time lag' to find the optimal correlation
 
-st.title("COVID-19 Signal Correlation Analysis")
-st.write("This app allows you to explore the correlation between two COVID-19 signals.")
+    The tool supports different correlation methods (Pearson, Kendall, Spearman) 
+    and allows you to explore how signals relate to each other across time.
+    """)
+
+st.markdown("""
+    <div style="background-color: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 2rem;">
+        <h1>COVID-19 Signal Correlation Analysis</h1>
+        <p>This app allows you to explore the correlation between two COVID-19 signals.</p>
+    </div>
+""", unsafe_allow_html=True)
 
 signals_display = list(names_to_sources.keys())
 
+st.markdown("📊 **Select two signals:**")
 col1, col2 = st.columns(2)
 with col1:
-    signal_display1 = st.selectbox("Choose signal 1:", signals_display)
+    signal_display1 = st.selectbox("Choose signal 1:", signals_display, label_visibility="collapsed")
+    # label_visibility="collapsed" might be disallowed in the future
+    # https://docs.streamlit.io/develop/api-reference/widgets/st.selectbox
     source1, signal1 = names_to_sources[signal_display1]
 with col2:
     signal_display2 = st.selectbox(
         "Choose signal 2:",
         [signal for signal in signals_display if signal != signal_display1],
+        label_visibility="collapsed"
     )
     source2, signal2 = names_to_sources[signal_display2]
 
@@ -83,6 +100,7 @@ shared_geo_types_display = [
     geotypes_to_display[geo_type] for geo_type in shared_geo_types
 ]
 
+st.markdown("🌍 **Select a region of interest:**")
 col1, col2 = st.columns(2)
 with col1:
     geo_type_display = st.selectbox("Browse by:", shared_geo_types_display)
@@ -146,7 +164,7 @@ except ValueError:
     st.stop()
 
 init_date, final_date = st.slider(
-    "Date range:",
+    "📅 **Select the date range:**",
     min_value=shared_init_date,
     max_value=shared_final_date,
     value=(shared_init_date, shared_final_date),
@@ -202,7 +220,7 @@ if "df1" in st.session_state and "df2" in st.session_state:
     ).lower()
 
     # Show the help text for the selected method
-    st.info(get_correlation_method_info(correlation_method))
+    st.info(correlation_method_info[correlation_method])
 
     # Update plot based on current lag and selected correlation method
     new_fig, new_correlation = update_plot_with_lag(
