@@ -73,15 +73,15 @@ def get_shared_dates(metadata, geo_type, *source_and_signals):
         geo_type: Geographic type to check
         *source_and_signals: Variable number of (source, signal) tuples
     """
-    if len(source_and_signals) < 2:
-        raise ValueError("At least two source-signal pairs are required")
-    
     # Get dates and time_types for all signals
     date_ranges = [
         get_signal_dates(metadata, source_signal, geo_type, return_time_type=True)
         for source_signal in source_and_signals
     ]
-    
+
+    if len(date_ranges) == 1:
+        return date_ranges[0]
+
     # Verify all time_types match
     time_types = [dates[2] for dates in date_ranges]
     if not all(tt == time_types[0] for tt in time_types):
