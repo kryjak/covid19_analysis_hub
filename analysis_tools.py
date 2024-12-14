@@ -2,15 +2,18 @@ import pandas as pd
 from rpy2.robjects import r
 from rpy2.robjects import pandas2ri
 from rpy2.robjects import conversion, default_converter
+from rpy2.robjects import NULL
 import streamlit as st
 
 
 def fetch_covidcast_data(
-    geo_type, geo_value, source_and_signal, init_date, final_date, time_type
+    geo_type, geo_value, source_and_signal, init_date, final_date, time_type, as_of=None
 ):
     source, signal = source_and_signal
     with conversion.localconverter(default_converter + pandas2ri.converter):
         r.source("R_analysis_tools.r")
+
+        r_as_of = NULL if as_of is None else as_of
 
         try:
             df = r.fetch_covidcast_data(
@@ -21,6 +24,7 @@ def fetch_covidcast_data(
                 init_date=init_date,
                 final_date=final_date,
                 time_type=time_type,
+                as_of=r_as_of
             )
 
         except Exception as e:
@@ -42,13 +46,6 @@ def merge_dataframes(*dfs):
     Returns:
         pandas DataFrame: Merged dataframe with data from all input dataframes
     """
-    if len(dfs) < 2:
-        result = dfs[0].rename(columns={
-            "source": "source0",
-            "signal": "signal0",
-            "value": "value0"
-        })
-        return result
 
     # Verify that geo_type, geo_value, and time_type match across all dataframes
     base_df = dfs[0]
@@ -60,41 +57,40 @@ def merge_dataframes(*dfs):
             )
 
     # Start with the first dataframe
-    result = dfs[0][[
-        "source",
-        "signal",
+    first_df = dfs[0]
+    result = first_df[[
         "geo_type",
         "geo_value",
         "time_type",
         "time_value",
         "value"
     ]].copy()
-
-    # Merge with remaining dataframes
-    for i, df in enumerate(dfs[1:], 1):
-        result = pd.merge(
-            result,
-            df[["source", "signal", "time_value", "value"]],
-            on="time_value",
-            suffixes=(str(i-1) if i > 1 else "", str(i))
-        )
-
-    # Rename columns for the first dataframe (which didn't get a suffix)
+    
+    # Rename the value column for the first dataframe
+    first_source = first_df["source"].iloc[0]
+    first_signal = first_df["signal"].iloc[0]
     result = result.rename(columns={
-        "source": "source0",
-        "signal": "signal0",
-        "value": "value0"
+        "value": f"value_{first_source}_{first_signal}"
     })
 
-    # Create final column order
-    source_signal_columns = []
-    value_columns = []
-    for i in range(len(dfs)):
-        source_signal_columns.extend([f"source{i}", f"signal{i}"])
-        value_columns.append(f"value{i}")
+    # Merge with remaining dataframes
+    for df in dfs[1:]:
+        source = df["source"].iloc[0]
+        signal = df["signal"].iloc[0]
+        value_col_name = f"value_{source}_{signal}"
+        
+        temp_df = df[["time_value", "value"]].copy()
+        temp_df = temp_df.rename(columns={"value": value_col_name})
+        
+        result = pd.merge(
+            result,
+            temp_df,
+            on="time_value"
+        )
 
+    # Create final column order
+    value_columns = [f"value_{df['source'].iloc[0]}_{df['signal'].iloc[0]}" for df in dfs]
     final_columns = (
-        source_signal_columns +
         ["geo_type", "geo_value", "time_type", "time_value"] +
         value_columns
     )
@@ -104,11 +100,22 @@ def merge_dataframes(*dfs):
 
 def calculate_epi_correlation(df1, df2, cor_by="geo_value", lag=0, method="pearson"):
     df = merge_dataframes(df1, df2)
+    
+    # Extract column names based on source and signal from original dataframes
+    value1_name = f"value_{df1['source'].iloc[0]}_{df1['signal'].iloc[0]}"
+    value2_name = f"value_{df2['source'].iloc[0]}_{df2['signal'].iloc[0]}"
 
     with conversion.localconverter(default_converter + pandas2ri.converter):
         r.source("R_analysis_tools.r")
 
-        corr_df = r.calculate_correlation(df, cor_by, lag, method)
+        corr_df = r.calculate_correlation(
+            df, 
+            value1_name=value1_name,
+            value2_name=value2_name,
+            cor_by=cor_by, 
+            lag=lag, 
+            method=method,
+        )
 
     return corr_df
 
@@ -116,6 +123,9 @@ def calculate_epi_correlation(df1, df2, cor_by="geo_value", lag=0, method="pears
 def get_lags_and_correlations(df1, df2, cor_by="geo_value", max_lag=14, method="pearson"):
     # Merge once at the beginning
     merged_df = merge_dataframes(df1, df2)
+
+    value1_name = f"value_{df1['source'].iloc[0]}_{df1['signal'].iloc[0]}"
+    value2_name = f"value_{df2['source'].iloc[0]}_{df2['signal'].iloc[0]}"
 
     progress_bar = st.progress(0)
     status_text = st.empty()
@@ -131,7 +141,14 @@ def get_lags_and_correlations(df1, df2, cor_by="geo_value", max_lag=14, method="
             r.source("R_analysis_tools.r")
             
             for i, lag in enumerate(range(-max_lag, max_lag + 1)):
-                corr = r.calculate_correlation(r_df, cor_by, lag, method)
+                corr = r.calculate_correlation(
+                    r_df, 
+                    value1_name, 
+                    value2_name, 
+                    cor_by, 
+                    lag, 
+                    method
+                )
                 lags_and_correlations[lag] = corr.iloc[0]["cor"]
                 
                 # Update progress
