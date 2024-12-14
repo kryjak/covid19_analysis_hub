@@ -9,7 +9,6 @@ def fetch_covidcast_data(
     geo_type, geo_value, source_and_signal, init_date, final_date, time_type
 ):
     source, signal = source_and_signal
-
     with conversion.localconverter(default_converter + pandas2ri.converter):
         r.source("R_analysis_tools.r")
 
@@ -44,7 +43,12 @@ def merge_dataframes(*dfs):
         pandas DataFrame: Merged dataframe with data from all input dataframes
     """
     if len(dfs) < 2:
-        raise ValueError("At least two dataframes are required for merging")
+        result = dfs[0].rename(columns={
+            "source": "source0",
+            "signal": "signal0",
+            "value": "value0"
+        })
+        return result
 
     # Verify that geo_type, geo_value, and time_type match across all dataframes
     base_df = dfs[0]
