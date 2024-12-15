@@ -42,12 +42,6 @@ epi_predict <- function(df, predictor_col_names, predicted_col_names, forecaster
                     predictors = predictors,
                     trainer = linear_reg(),
                     arx_args_list(ahead = ahead))
-  } else if (forecaster_type == "arx_classifier") {
-    forecast <- arx_classifier(df,
-                    outcome = predicted_col_names,
-                    predictors = predictors,
-                    trainer = logistic_reg(),
-                    arx_class_args_list(ahead = ahead))
   } else if (forecaster_type == "flatline_forecaster") {
     forecast <- flatline_forecaster(df,
                     outcome = predicted_col_names,
