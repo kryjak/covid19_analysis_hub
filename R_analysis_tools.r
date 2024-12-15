@@ -32,8 +32,7 @@ calculate_correlation <- function(df, value1_name, value2_name, cor_by="geo_valu
   return(cor_value)
 }
 
-epi_predict <- function(df, predictor_col_names, predicted_col_names, forecaster_type, prediction_length) {
-  # df$time_value <- as.Date(df$time_value) # this line is crucial to ensure dates get passed
+epi_predict <- function(df, predictor_col_names, predicted_col_names, forecaster_type, ahead) {
   df <- as_epi_df(df)
   predictors <- unlist(predictor_col_names)
 
@@ -42,21 +41,21 @@ epi_predict <- function(df, predictor_col_names, predicted_col_names, forecaster
                     outcome = predicted_col_names,
                     predictors = predictors,
                     trainer = linear_reg(),
-                    arx_args_list(ahead = 1))
+                    arx_args_list(ahead = ahead))
   } else if (forecaster_type == "arx_classifier") {
     forecast <- arx_classifier(df,
                     outcome = predicted_col_names,
                     predictors = predictors,
                     trainer = logistic_reg(),
-                    arx_class_args_list(ahead = 1))
+                    arx_class_args_list(ahead = ahead))
   } else if (forecaster_type == "flatline_forecaster") {
     forecast <- flatline_forecaster(df,
                     outcome = predicted_col_names,
-                    flatline_args_list(ahead = 1))
+                    flatline_args_list(ahead = ahead))
   } else if (forecaster_type == "cdc_baseline_forecaster") {
     forecast <- cdc_baseline_forecaster(df,
                     outcome = predicted_col_names,
-                    cdc_baseline_args_list(aheads = 1:prediction_length))
+                    cdc_baseline_args_list(aheads = 1:ahead))
   } else {
     stop("Invalid forecaster type")
   }
