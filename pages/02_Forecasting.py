@@ -4,7 +4,7 @@ from available_signals import names_to_sources, sources_to_names
 from helper_texts import helper_content, forecasting_page_helpers
 from utils import get_shared_dates, to_epidate_range, to_epiweek_range
 from datetime import timedelta
-from analysis_tools import fetch_covidcast_data, merge_dataframes, epi_predict
+from analysis_tools import fetch_covidcast_data, merge_dataframes, epi_predict, fetch_covidcast_data_multi
 
 covidcast_metadata = pd.read_csv("csv_data/covidcast_metadata.csv")
 
@@ -83,25 +83,10 @@ if st.button(
 ):
     with st.spinner("Fetching data..."):
         # Fetch data for all predictors - use latest available version
-        dataframes = []
-        for predictor in predictors_and_predicted:
-            df = fetch_covidcast_data(
-                geo_type, region, predictor, date_range_train[0], date_range_train[-1], time_type, as_of=None
-            )
-            dataframes.append(df)
-
-        df_merged = merge_dataframes(*dataframes)
+        df_merged = fetch_covidcast_data_multi(geo_type, region, predictors_and_predicted, date_range_train[0], date_range_train[-1], time_type, as_of=None)
 
         # Fetch data for all predictors - use version available *at the time of making the prediction*
-        dataframes_as_of = []
-        for predictor in predictors_and_predicted:
-            df = fetch_covidcast_data(
-                geo_type, region, predictor, date_range_train[0], date_range_train[-1], time_type, as_of=final_date.strftime("%Y-%m-%d")
-            )
-            dataframes_as_of.append(df)
-        
-        # Merge all dataframes sequentially
-        df_merged_as_of = merge_dataframes(*dataframes_as_of)
+        df_merged_as_of = fetch_covidcast_data_multi(geo_type, region, predictors_and_predicted, date_range_train[0], date_range_train[-1], time_type, as_of=final_date.strftime("%Y-%m-%d"))
 
         # Now get data for the predicted quantity - use latest available version again
         df_predicted_actual = fetch_covidcast_data(
@@ -110,5 +95,6 @@ if st.button(
 
         forecaster_type = "arx_forecaster"
         df_forecast = epi_predict(df_merged, predictors, predicted, forecaster_type, prediction_length)
+        st.write(df_forecast)
         st.divider()
 

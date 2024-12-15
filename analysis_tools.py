@@ -177,11 +177,38 @@ def epi_predict(df, predictors, predicted, forecaster_type, prediction_length):
     source, signal = predicted
     predicted_col_names = f"value_{source}_{signal}"
 
-    with conversion.localconverter(default_converter + pandas2ri.converter):
-        r.source("R_analysis_tools.r")
-        forecast = r.epi_predict(df, predictor_col_names, predicted_col_names, forecaster_type, prediction_length)
+    # Initialize progress tracking
+    progress_bar = st.progress(0)
+    status_text = st.empty()
 
-        forecast['target_date'] = forecast['target_date'].apply(lambda x: date.fromordinal(x))
-        forecast['forecast_date'] = forecast['forecast_date'].apply(lambda x: date.fromordinal(x))
-        
-    return forecast
+    try:
+        with conversion.localconverter(default_converter + pandas2ri.converter):
+            r.source("R_analysis_tools.r")
+            
+            if forecaster_type == "cdc_baseline_forecaster":
+                status_text.text("Generating forecast...")
+                forecast = r.epi_predict(df, predictor_col_names, predicted_col_names, forecaster_type, prediction_length)
+                progress_bar.progress(1.0)
+            else:
+                forecasts = []
+                for ahead in range(1, prediction_length + 1):
+                    # Update progress
+                    progress = ahead / prediction_length
+                    progress_bar.progress(progress)
+                    status_text.text(f"Generating forecast... ({ahead}/{prediction_length})")
+
+                    single_forecast = r.epi_predict(df, predictor_col_names, predicted_col_names, forecaster_type, ahead)
+                    forecasts.append(single_forecast)
+                
+                forecast = pd.concat(forecasts, ignore_index=True)
+
+            # Convert dates for both cases
+            forecast['target_date'] = forecast['target_date'].apply(lambda x: date.fromordinal(x))
+            forecast['forecast_date'] = forecast['forecast_date'].apply(lambda x: date.fromordinal(x))
+            
+        return forecast
+
+    finally:
+        # Clean up progress indicators
+        progress_bar.empty()
+        status_text.empty()
