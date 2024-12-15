@@ -2,8 +2,10 @@ import numpy as np
 from scipy.stats import gaussian_kde
 import plotly.graph_objects as go
 import plotly.subplots as make_subplots
-from datetime import timedelta
+from datetime import datetime, timedelta, date
 from analysis_tools import calculate_epi_correlation
+from available_signals import sources_to_names
+import pandas as pd
 
 def create_plotly_dual_axis(df1, df2, name1, name2, title, annotation_text):
     fig = make_subplots.make_subplots(specs=[[{"secondary_y": True}]])
@@ -152,4 +154,201 @@ def plot_correlation_distribution(lags_and_correlations: dict) -> go.Figure:
         yaxis=dict(side='right'),  # Place the y-axis label on the right side
         showlegend=False
     )
+    return fig
+
+def create_forecast_plot(df_merged, df_merged_as_of, df_forecast, df_forecast_as_of, df_actual, 
+                        prediction_date, predicted_source_signal):
+    """
+    Create an interactive forecast plot using Plotly.
+    
+    Parameters:
+    -----------
+    df_merged : pd.DataFrame
+        Historical data using latest available estimates
+    df_merged_as_of : pd.DataFrame
+        Historical data as available at prediction time
+    df_forecast : pd.DataFrame
+        Predictions using latest available data
+    df_forecast_as_of : pd.DataFrame
+        Predictions using data available at prediction time
+    df_actual : pd.DataFrame
+        Actual observed values during the forecast period
+    prediction_date : datetime.date
+        The date when the prediction was made
+    predicted_source_signal : tuple of str
+        Source and signal of the predicted quantity
+    
+    Returns:
+    --------
+    plotly.graph_objects.Figure
+    """
+    predicted_name = sources_to_names[predicted_source_signal]
+    predicted_col_name = "value_" + "_".join(predicted_source_signal)
+
+    forecast_length = (df_forecast['target_date'].max() - df_forecast['target_date'].min()).days
+    # Calculate the historical window (3 times the forecast length)
+    historical_length = forecast_length * 3
+    if historical_length < 7:
+        historical_length = 7
+    historical_start = prediction_date - timedelta(days=historical_length)
+
+    # Filter historical data to show only the calculated window
+    df_merged_filtered = df_merged[df_merged['time_value'] >= historical_start]
+    df_merged_as_of_filtered = df_merged_as_of[df_merged_as_of['time_value'] >= historical_start]
+
+    # Get the last historical values at prediction_date
+    last_historical_value = df_merged[df_merged['time_value'] <= prediction_date][predicted_col_name].iloc[-1]
+    last_historical_value_as_of = df_merged_as_of[df_merged_as_of['time_value'] <= prediction_date][predicted_col_name].iloc[-1]
+
+    # Add the prediction_date point to the forecast DataFrames
+    forecast_start = pd.DataFrame({
+        'target_date': [prediction_date],
+        '.pred': [last_historical_value],
+        '.pred_upper': [last_historical_value],
+        '.pred_lower': [last_historical_value]
+    })
+    forecast_as_of_start = pd.DataFrame({
+        'target_date': [prediction_date],
+        '.pred': [last_historical_value_as_of],
+        '.pred_upper': [last_historical_value_as_of],
+        '.pred_lower': [last_historical_value_as_of]
+    })
+
+    # Concatenate with the original forecast DataFrames
+    df_forecast = pd.concat([forecast_start, df_forecast], ignore_index=True)
+    df_forecast_as_of = pd.concat([forecast_as_of_start, df_forecast_as_of], ignore_index=True)
+
+    fig = go.Figure()
+
+    # Historical data (now using filtered data)
+    fig.add_trace(
+        go.Scatter(
+            x=df_merged_filtered['time_value'],
+            y=df_merged_filtered[predicted_col_name],
+            name='Historical (Latest)',
+            line=dict(color='blue'),
+            mode='lines',
+            hovertemplate='%{y:.2f}<br>%{x|%Y-%m-%d}<extra></extra>'
+        )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=df_merged_as_of_filtered['time_value'],
+            y=df_merged_as_of_filtered[predicted_col_name],
+            name='Historical (As of prediction)',
+            line=dict(color='lightblue'),
+            mode='lines',
+            hovertemplate='%{y:.2f}<br>%{x|%Y-%m-%d}<extra></extra>'
+        )
+    )
+
+    # Forecasts
+    fig.add_trace(
+        go.Scatter(
+            x=df_forecast['target_date'],
+            y=df_forecast['.pred'],
+            name='Forecast (Latest)',
+            line=dict(color='blue', dash='dash'),
+            mode='lines',
+            hovertemplate='%{y:.2f}<br>%{x|%Y-%m-%d}<extra></extra>'
+        )
+    )
+
+    # Confidence intervals for latest forecast
+    fig.add_trace(
+        go.Scatter(
+            x=df_forecast['target_date'].tolist() + df_forecast['target_date'].tolist()[::-1],
+            y=df_forecast['.pred_upper'].tolist() + df_forecast['.pred_lower'].tolist()[::-1],
+            fill='toself',
+            fillcolor='rgba(0,0,255,0.2)',
+            line=dict(color='rgba(0,0,255,0)'),
+            name='90% CI (Latest)',
+            showlegend=True,
+            visible='legendonly',
+            hoverinfo='skip'
+        )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=df_forecast_as_of['target_date'],
+            y=df_forecast_as_of['.pred'],
+            name='Forecast (As of prediction)',
+            line=dict(color='lightblue', dash='dash'),
+            mode='lines',
+            hovertemplate='%{y:.2f}<br>%{x|%Y-%m-%d}<extra></extra>'
+        )
+    )
+
+    # Confidence intervals for as-of forecast
+    fig.add_trace(
+        go.Scatter(
+            x=df_forecast_as_of['target_date'].tolist() + df_forecast_as_of['target_date'].tolist()[::-1],
+            y=df_forecast_as_of['.pred_upper'].tolist() + df_forecast_as_of['.pred_lower'].tolist()[::-1],
+            fill='toself',
+            fillcolor='rgba(173,216,230,0.2)',
+            line=dict(color='rgba(173,216,230,0)'),
+            name='90% CI (As of prediction)',
+            showlegend=True,
+            visible='legendonly',
+            hoverinfo='skip',
+            mode='lines'
+        )
+    )
+
+    # Actual values
+    fig.add_trace(
+        go.Scatter(
+            x=df_actual['time_value'],
+            y=df_actual['value'],
+            name='Actual values',
+            line=dict(color='green'),
+            mode='lines',
+            hovertemplate='%{y:.2f}<br>%{x|%Y-%m-%d}<extra></extra>'
+        )
+    )
+
+    # Convert prediction_date to datetime if it's a date object
+    if isinstance(prediction_date, date):
+        prediction_date = datetime.combine(prediction_date, datetime.min.time())
+
+    # Add vertical line at prediction date
+    fig.add_shape(
+        type='line',
+        x0=prediction_date,
+        x1=prediction_date,
+        y0=0,
+        y1=1,
+        yref='paper',
+        line=dict(
+            color='gray',
+        )
+    )
+
+    # Add annotation for the prediction date
+    fig.add_annotation(
+        x=prediction_date,
+        y=1,
+        yref='paper',
+        text="Prediction date",
+        showarrow=False,
+        yshift=10
+    )
+
+    # Update layout
+    fig.update_layout(
+        title=f"Forecast for {predicted_name}",
+        xaxis_title="Date",
+        yaxis_title="Value",
+        hovermode='x unified',
+        showlegend=True,
+        legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=0.01
+        )
+    )
+
     return fig

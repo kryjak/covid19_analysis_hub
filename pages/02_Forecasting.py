@@ -1,10 +1,11 @@
 import streamlit as st
 import pandas as pd
 from available_signals import names_to_sources, sources_to_names
-from helper_texts import helper_content, forecasting_page_helpers
+from helper_texts import helper_content, forecasting_page_helpers, forecasters_info
 from utils import get_shared_dates, to_epidate_range, to_epiweek_range
 from datetime import timedelta
-from analysis_tools import fetch_covidcast_data, merge_dataframes, epi_predict, fetch_covidcast_data_multi
+from analysis_tools import fetch_covidcast_data, epi_predict, fetch_covidcast_data_multi
+from plotting_utils import create_forecast_plot
 
 covidcast_metadata = pd.read_csv("csv_data/covidcast_metadata.csv")
 
@@ -79,10 +80,25 @@ with col_horizon:
     prediction_length = st.slider(
         "📈 **Forecast horizon (days)**",
         min_value=1,
-        max_value=30,  # Reasonable maximum to ensure forecast quality
-        value=7,       # Default value of one week
+        max_value=45,
+        value=7,
         help="Number of days ahead to forecast. Longer horizons may result in less accurate predictions."
     )
+
+col1, col2, col3 = st.columns([5, 3, 1.4])
+with col1:
+    forecaster_type = st.radio("Forecaster type", forecasters_info.keys(), index=0, help="The type of forecaster to use.", key="forecaster_type", format_func=lambda x: x.capitalize().replace("_", " "))
+with col3:
+    if 'show_help_forecast_2' not in st.session_state:
+        st.session_state.show_help_forecast_2 = False
+
+    if st.button("🛈\nHelp", type="secondary", key="help_button_2"):
+        st.session_state.show_help_forecast_2 = not st.session_state.show_help_forecast_2
+
+if st.session_state.show_help_forecast_2:
+    st.markdown(helper_content.format(text=forecasting_page_helpers["help_2"]), unsafe_allow_html=True)
+
+st.info(forecasters_info[forecaster_type])
 
 # Calculate final_date based on init_date and prediction_length
 final_date = init_date + timedelta(days=prediction_length)
@@ -91,7 +107,7 @@ date_range_train = to_epidate_range(shared_init_date, init_date)
 date_range_predict = to_epidate_range(init_date, final_date)
 
 if st.button(
-    "Fetch Data",
+    "Fetch data and get predictions",
     type="primary",
     help="Click to fetch data and get predictions",
 ):
@@ -103,12 +119,22 @@ if st.button(
         df_merged_as_of = fetch_covidcast_data_multi(geo_type, region, predictors_and_predicted, date_range_train[0], date_range_train[-1], time_type, as_of=final_date.strftime("%Y-%m-%d"))
 
         # Now get data for the predicted quantity - use latest available version again
-        df_predicted_actual = fetch_covidcast_data(
+        df_actual = fetch_covidcast_data(
             geo_type, region, predicted, date_range_predict[0], date_range_predict[-1], time_type, as_of=None
         )
 
-        forecaster_type = "arx_forecaster"
-        df_forecast = epi_predict(df_merged, predictors, predicted, forecaster_type, prediction_length)
-        st.write(df_forecast)
-        st.divider()
+    df_forecast = epi_predict(df_merged, predictors, predicted, forecaster_type, prediction_length, is_as_of=False)
+    df_forecast_as_of = epi_predict(df_merged_as_of, predictors, predicted, forecaster_type, prediction_length, is_as_of=True)
 
+    fig = create_forecast_plot(
+        df_merged,
+        df_merged_as_of,
+        df_forecast,
+        df_forecast_as_of,
+        df_actual,
+        init_date,
+        predicted
+    )
+    st.plotly_chart(fig, use_container_width=True)    
+
+    st.divider()
