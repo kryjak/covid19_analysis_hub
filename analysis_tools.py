@@ -36,6 +36,15 @@ def fetch_covidcast_data(
 
     return df
 
+def fetch_covidcast_data_multi(geo_type, geo_value, source_and_signal, init_date, final_date, time_type, as_of=None):
+    dataframes = []
+    for source_and_signal in source_and_signal:
+        df = fetch_covidcast_data(
+            geo_type, geo_value, source_and_signal, init_date, final_date, time_type, as_of=None
+        )
+        dataframes.append(df)
+
+    return merge_dataframes(*dataframes)
 
 def merge_dataframes(*dfs):
     """
