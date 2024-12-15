@@ -1,6 +1,11 @@
 import pandas as pd
 from datetime import date
 from epiweeks import Week
+from rpy2.robjects import r
+from rpy2.robjects import conversion, default_converter
+import os
+from pathlib import Path
+from rpy2.rinterface_lib.embedded import RRuntimeError
 
 covidcast_metadata = pd.read_csv("csv_data/covidcast_metadata.csv")
 
@@ -106,3 +111,18 @@ def to_epiweek_range(dt1: date, dt2: date) -> tuple[int, int]:
     return int(str(start_year) + str(start_week.week)), int(
         str(end_year) + str(end_week.week)
     )
+
+
+def save_the_api_key(api_key):
+    # Set environment variable in R
+    r(f'Sys.setenv(DELPHI_EPIDATA_KEY="{api_key}")')
+    
+    # Load into R session
+    r_script_path = os.path.abspath("R_analysis_tools.r")
+    with conversion.localconverter(default_converter):
+        try:
+            r.source(r_script_path)
+            api_key_r = r.get_the_api_key()
+            return str(api_key_r[0])  # Convert R StrVector to Python string
+        except Exception as e:
+            print(f"Error: {str(e)}")

@@ -1,5 +1,6 @@
 import streamlit as st
-
+from utils import save_the_api_key
+from helper_texts import homepage_helpers
 st.set_page_config(
     page_title="COVID-19 Analysis Hub",
     page_icon="🦠",
@@ -23,8 +24,22 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-
-st.title("COVID-19 Analysis Hub")
+col1, col2 = st.columns([6, 2.5])
+with col1:
+    st.title("COVID-19 Analysis Hub")
+with col2:
+    with st.expander("⚙️ API Settings"):
+        api_key = st.text_input(
+            "**(OPTIONAL)** Enter your Epidata API key:",
+        help=homepage_helpers["api_settings"],
+        type="password"  # This will hide the API key
+        )
+        if api_key:
+            api_key_r = save_the_api_key(api_key)
+            if api_key_r == api_key:
+                st.success('API key saved.')
+            else:
+                st.error('API key save has failed.')
 
 st.write("""
 Welcome to the COVID-19 Analysis Hub! This application provides various tools to analyze 
