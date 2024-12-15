@@ -220,7 +220,7 @@ def create_forecast_plot(df_merged, df_merged_as_of, df_forecast, df_forecast_as
 
     fig = go.Figure()
 
-    # Historical data (now using filtered data)
+    # Historical data (Latest)
     fig.add_trace(
         go.Scatter(
             x=df_merged_filtered['time_value'],
@@ -228,10 +228,12 @@ def create_forecast_plot(df_merged, df_merged_as_of, df_forecast, df_forecast_as
             name='Historical (Latest)',
             line=dict(color='blue'),
             mode='lines',
+            legendgroup='latest',
             hovertemplate='%{y:.2f}<br>%{x|%Y-%m-%d}<extra></extra>'
         )
     )
 
+    # Historical data (As of prediction)
     fig.add_trace(
         go.Scatter(
             x=df_merged_as_of_filtered['time_value'],
@@ -239,11 +241,12 @@ def create_forecast_plot(df_merged, df_merged_as_of, df_forecast, df_forecast_as
             name='Historical (As of prediction)',
             line=dict(color='lightblue'),
             mode='lines',
+            legendgroup='as_of',
             hovertemplate='%{y:.2f}<br>%{x|%Y-%m-%d}<extra></extra>'
         )
     )
 
-    # Forecasts
+    # Forecasts (Latest)
     fig.add_trace(
         go.Scatter(
             x=df_forecast['target_date'],
@@ -251,6 +254,22 @@ def create_forecast_plot(df_merged, df_merged_as_of, df_forecast, df_forecast_as
             name='Forecast (Latest)',
             line=dict(color='blue', dash='dash'),
             mode='lines',
+            legendgroup='latest',
+            showlegend=False,
+            hovertemplate='%{y:.2f}<br>%{x|%Y-%m-%d}<extra></extra>'
+        )
+    )
+
+    # Forecasts (As of prediction)
+    fig.add_trace(
+        go.Scatter(
+            x=df_forecast_as_of['target_date'],
+            y=df_forecast_as_of['.pred'],
+            name='Forecast (As of prediction)',
+            line=dict(color='lightblue', dash='dash'),
+            mode='lines',
+            legendgroup='as_of',
+            showlegend=False,
             hovertemplate='%{y:.2f}<br>%{x|%Y-%m-%d}<extra></extra>'
         )
     )
@@ -267,17 +286,6 @@ def create_forecast_plot(df_merged, df_merged_as_of, df_forecast, df_forecast_as
             showlegend=True,
             visible='legendonly',
             hoverinfo='skip'
-        )
-    )
-
-    fig.add_trace(
-        go.Scatter(
-            x=df_forecast_as_of['target_date'],
-            y=df_forecast_as_of['.pred'],
-            name='Forecast (As of prediction)',
-            line=dict(color='lightblue', dash='dash'),
-            mode='lines',
-            hovertemplate='%{y:.2f}<br>%{x|%Y-%m-%d}<extra></extra>'
         )
     )
 
