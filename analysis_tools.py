@@ -40,7 +40,7 @@ def fetch_covidcast_data_multi(geo_type, geo_value, source_and_signal, init_date
     dataframes = []
     for source_and_signal in source_and_signal:
         df = fetch_covidcast_data(
-            geo_type, geo_value, source_and_signal, init_date, final_date, time_type, as_of=None
+            geo_type, geo_value, source_and_signal, init_date, final_date, time_type, as_of=as_of
         )
         dataframes.append(df)
 
@@ -172,7 +172,7 @@ def get_lags_and_correlations(df1, df2, cor_by="geo_value", max_lag=14, method="
         progress_bar.empty()
         status_text.empty()
 
-def epi_predict(df, predictors, predicted, forecaster_type, prediction_length):
+def epi_predict(df, predictors, predicted, forecaster_type, prediction_length, is_as_of=False):
     predictor_col_names = [f"value_{source}_{signal}" for source, signal in predictors]
     source, signal = predicted
     predicted_col_names = f"value_{source}_{signal}"
@@ -181,12 +181,17 @@ def epi_predict(df, predictors, predicted, forecaster_type, prediction_length):
     progress_bar = st.progress(0)
     status_text = st.empty()
 
+    if is_as_of:
+        status_text_as_of = "Generating forecast using data available at the time of prediction..."
+    else:
+        status_text_as_of = "Generating forecast using latest available data..."
+
     try:
         with conversion.localconverter(default_converter + pandas2ri.converter):
             r.source("R_analysis_tools.r")
             
             if forecaster_type == "cdc_baseline_forecaster":
-                status_text.text("Generating forecast...")
+                status_text.text(status_text_as_of)
                 forecast = r.epi_predict(df, predictor_col_names, predicted_col_names, forecaster_type, prediction_length)
                 progress_bar.progress(1.0)
             else:
@@ -195,7 +200,7 @@ def epi_predict(df, predictors, predicted, forecaster_type, prediction_length):
                     # Update progress
                     progress = ahead / prediction_length
                     progress_bar.progress(progress)
-                    status_text.text(f"Generating forecast... ({ahead}/{prediction_length})")
+                    status_text.text(f"{status_text_as_of} ({ahead}/{prediction_length})")
 
                     single_forecast = r.epi_predict(df, predictor_col_names, predicted_col_names, forecaster_type, ahead)
                     forecasts.append(single_forecast)
