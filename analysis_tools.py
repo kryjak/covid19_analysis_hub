@@ -7,6 +7,11 @@ from datetime import date
 import streamlit as st
 
 
+class NoCovidcastDataError(Exception):
+    """Raised when no data is returned from pub_covidcast for the given parameters"""
+    pass
+
+
 def fetch_covidcast_data(
     geo_type, geo_value, source_and_signal, init_date, final_date, time_type, as_of=None
 ):
@@ -27,12 +32,32 @@ def fetch_covidcast_data(
                 time_type=time_type,
                 as_of=r_as_of
             )
-
         except Exception as e:
-            raise e
+            if "EmptyResponseError" in str(e):
+                raise NoCovidcastDataError(
+                    f"No data returned from pub_covidcast for:\n"
+                    f" source: {source}\n"
+                    f" signal: {signal}\n"
+                    f" geo_type: {geo_type}\n"
+                    f" geo_value: {geo_value}\n"
+                    f" init_date: {init_date}\n"
+                    f" final_date: {final_date}\n"
+                    f" time_type: {time_type}\n"
+                    f" as_of: {as_of}.\n"
+                    "This is likely because the data for the requested signal at the given date "
+                    "was available only much later. Try removing this signal or investigating a "
+                    "later time period."
+                )
+            else:
+                # Handle other errors
+                raise e
 
     # Convert Unix timestamps to datetime
-    df["time_value"] = pd.to_datetime(df["time_value"], unit="D").dt.date
+    try:
+        df["time_value"] = pd.to_datetime(df["time_value"], unit="D").dt.date
+    except Exception as e:
+        print(df.columns)
+        raise e
 
     return df
 

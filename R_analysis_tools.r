@@ -3,6 +3,11 @@ library(epiprocess)
 library(epipredict)
 library(dplyr)  # Add this line
 
+# First, create the custom error class
+EmptyResponseError <- function(message) {
+  condition(c("EmptyResponseError", "error"), message = message)
+}
+
 fetch_covidcast_data <- function(
   geo_type, geo_value, source, signal,
   init_date, final_date, time_type, as_of = NULL
@@ -16,6 +21,10 @@ fetch_covidcast_data <- function(
     time_values = epirange(init_date, final_date),
     as_of = as_of
   )
+
+  if (nrow(response) == 0) {
+    stop(EmptyResponseError("No data returned from pub_covidcast"))
+  }
 
   return(response)
 }
@@ -62,4 +71,8 @@ epi_predict <- function(df, predictor_col_names, predicted_col_names, forecaster
     select(-`.pred_distn`)
 
   return(forecast_df)
+}
+
+get_the_api_key <- function() {
+  return(get_api_key())
 }
