@@ -4,7 +4,7 @@ from available_signals import names_to_sources, sources_to_names
 from helper_texts import helper_content, forecasting_page_helpers
 from utils import get_shared_dates, to_epidate_range, to_epiweek_range
 from datetime import timedelta
-from analysis_tools import fetch_covidcast_data, merge_dataframes
+from analysis_tools import fetch_covidcast_data, merge_dataframes, epi_predict
 
 covidcast_metadata = pd.read_csv("csv_data/covidcast_metadata.csv")
 
@@ -40,6 +40,13 @@ if len(predictors) == 0:
 
 predicted = st.selectbox("Predicted quantity", all_sources_and_signals, index=1, help="The quantity you want to predict (suggested: # of deaths).", format_func=lambda x: sources_to_names[x])
 
+# if the user doesn't select the predicted quantity as a predictor, add it manually
+# this is so that the forecasting model can learn the relationship between the predictors and the predicted quantity
+if predicted not in predictors:
+    predictors_and_predicted = predictors + [predicted]
+else:
+    predictors_and_predicted = predictors
+
 ### HARDCODED TO THE UNITED STATES ONLY FOR NOW
 geo_type = "nation"
 region = 'us'
@@ -65,7 +72,9 @@ init_date, final_date = st.slider(
     help="The prediction will be made for the selected interval using all data available up until the start of this interval. An interval range of <30 days is recommended.",
 )
 
-date_range = to_epidate_range(shared_init_date, final_date)
+date_range_train = to_epidate_range(shared_init_date, init_date)
+date_range_predict = to_epidate_range(init_date, final_date)
+prediction_length = (final_date - init_date).days
 
 if st.button(
     "Fetch Data",
@@ -73,17 +82,33 @@ if st.button(
     help="Click to fetch data and get predictions",
 ):
     with st.spinner("Fetching data..."):
-        # Fetch data for all predictors and store in a list
+        # Fetch data for all predictors - use latest available version
         dataframes = []
-        for predictor in predictors:
+        for predictor in predictors_and_predicted:
             df = fetch_covidcast_data(
-                geo_type, region, predictor, date_range[0], date_range[-1], time_type
+                geo_type, region, predictor, date_range_train[0], date_range_train[-1], time_type, as_of=None
             )
             dataframes.append(df)
-            # Store in session state with dynamic keys
-            st.session_state[f"df_{predictor}"] = df
+
+        df_merged = merge_dataframes(*dataframes)
+
+        # Fetch data for all predictors - use version available *at the time of making the prediction*
+        dataframes_as_of = []
+        for predictor in predictors_and_predicted:
+            df = fetch_covidcast_data(
+                geo_type, region, predictor, date_range_train[0], date_range_train[-1], time_type, as_of=final_date.strftime("%Y-%m-%d")
+            )
+            dataframes_as_of.append(df)
         
         # Merge all dataframes sequentially
-        df_merged = merge_dataframes(*dataframes)
-        st.write(df_merged)
-    st.divider()
+        df_merged_as_of = merge_dataframes(*dataframes_as_of)
+
+        # Now get data for the predicted quantity - use latest available version again
+        df_predicted_actual = fetch_covidcast_data(
+            geo_type, region, predicted, date_range_predict[0], date_range_predict[-1], time_type, as_of=None
+        )
+
+        forecaster_type = "arx_forecaster"
+        df_forecast = epi_predict(df_merged, predictors, predicted, forecaster_type, prediction_length)
+        st.divider()
+

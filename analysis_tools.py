@@ -3,6 +3,7 @@ from rpy2.robjects import r
 from rpy2.robjects import pandas2ri
 from rpy2.robjects import conversion, default_converter
 from rpy2.robjects import NULL
+from datetime import date
 import streamlit as st
 
 
@@ -161,3 +162,17 @@ def get_lags_and_correlations(df1, df2, cor_by="geo_value", max_lag=14, method="
         # Clean up progress indicators
         progress_bar.empty()
         status_text.empty()
+
+def epi_predict(df, predictors, predicted, forecaster_type, prediction_length):
+    predictor_col_names = [f"value_{source}_{signal}" for source, signal in predictors]
+    source, signal = predicted
+    predicted_col_names = f"value_{source}_{signal}"
+
+    with conversion.localconverter(default_converter + pandas2ri.converter):
+        r.source("R_analysis_tools.r")
+        forecast = r.epi_predict(df, predictor_col_names, predicted_col_names, forecaster_type, prediction_length)
+
+        forecast['target_date'] = forecast['target_date'].apply(lambda x: date.fromordinal(x))
+        forecast['forecast_date'] = forecast['forecast_date'].apply(lambda x: date.fromordinal(x))
+        
+    return forecast
