@@ -1,9 +1,9 @@
 import streamlit as st
 import pandas as pd
 from available_signals import names_to_sources, sources_to_names
-from helper_texts import helper_content, forecasting_page_helpers, forecasters_info
+from helper_texts import helper_content, forecasting_page_helpers, forecasters_info, forecasters_to_display
 from utils import get_shared_dates, to_epidate_range, to_epiweek_range
-from datetime import timedelta
+from datetime import timedelta, date
 from analysis_tools import fetch_covidcast_data, epi_predict, fetch_covidcast_data_multi
 from plotting_utils import create_forecast_plot
 
@@ -32,14 +32,13 @@ if st.session_state.show_help_forecast_1:
     st.markdown(helper_content.format(text=forecasting_page_helpers["help_1"]), unsafe_allow_html=True)
 
 all_sources_and_signals = list(names_to_sources.values())
-st.markdown("📊 **Select the predictors and the predicted quantity:**")
-predictors = st.multiselect("Predictors", all_sources_and_signals, default=[names_to_sources[x] for x in ["Cases (7-day avg., per 100k)", "Deaths (7-day avg., per 100k)"]], help="All the predictors you want to use to train the forecasting model.", format_func=lambda x: sources_to_names[x])
+predictors = st.multiselect("**Select the predictors:**", all_sources_and_signals, default=[names_to_sources[x] for x in ["Cases (7-day avg., per 100k)", "Deaths (7-day avg., per 100k)"]], help="All the predictors you want to use to train the forecasting model.", format_func=lambda x: sources_to_names[x])
 
 if len(predictors) == 0:
     st.error("Please select at least one predictor to proceed with the forecasting.", icon="⚠️")
     st.stop()
 
-predicted = st.selectbox("Predicted quantity", all_sources_and_signals, index=1, help="The quantity you want to predict (suggested: # of deaths).", format_func=lambda x: sources_to_names[x])
+predicted = st.selectbox("**Select the predicted quantity:**", all_sources_and_signals, index=1, help="The quantity you want to predict (suggested: # of deaths).", format_func=lambda x: sources_to_names[x])
 
 # if the user doesn't select the predicted quantity as a predictor, add it manually
 # this is so that the forecasting model can learn the relationship between the predictors and the predicted quantity
@@ -72,22 +71,22 @@ with col_date:
         "📅 **When is the prediction made?**",
         min_value=shared_init_date,
         max_value=shared_final_date,
-        value=mid_date,
+        value=date(2021, 1, 1),
         help="The prediction will be made for the selected interval using all data available up until the start of this interval. An interval range of <30 days is recommended.",
     )
 
 with col_horizon:
     prediction_length = st.slider(
-        "📈 **Forecast horizon (days)**",
+        "📈 **For how many days?**",
         min_value=1,
         max_value=45,
-        value=7,
+        value=14,
         help="Number of days ahead to forecast. Longer horizons may result in less accurate predictions."
     )
 
 col1, col2, col3 = st.columns([5, 3, 1.4])
 with col1:
-    forecaster_type = st.radio("Forecaster type", forecasters_info.keys(), index=0, help="The type of forecaster to use.", key="forecaster_type", format_func=lambda x: x.capitalize().replace("_", " "))
+    forecaster_type = st.radio("**Forecaster type:**", forecasters_info.keys(), index=0, help="The type of forecaster to use.", key="forecaster_type", format_func=lambda x: forecasters_to_display[x])
 with col3:
     if 'show_help_forecast_2' not in st.session_state:
         st.session_state.show_help_forecast_2 = False
