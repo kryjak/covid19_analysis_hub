@@ -64,17 +64,31 @@ except ValueError:
 
 mid_date = shared_init_date + (shared_final_date - shared_init_date) / 2
 delta = (shared_final_date - shared_init_date).days // 10
-init_date, final_date = st.slider(
-    "📅 **Select the forecasting interval:**",
-    min_value=shared_init_date,
-    max_value=shared_final_date,
-    value=(mid_date - timedelta(days=delta), mid_date),
-    help="The prediction will be made for the selected interval using all data available up until the start of this interval. An interval range of <30 days is recommended.",
-)
+col_date, col_horizon = st.columns([3, 2])  # 3:2 ratio for the columns
+
+with col_date:
+    init_date = st.slider(
+        "📅 **When is the prediction made?**",
+        min_value=shared_init_date,
+        max_value=shared_final_date,
+        value=mid_date,
+        help="The prediction will be made for the selected interval using all data available up until the start of this interval. An interval range of <30 days is recommended.",
+    )
+
+with col_horizon:
+    prediction_length = st.slider(
+        "📈 **Forecast horizon (days)**",
+        min_value=1,
+        max_value=30,  # Reasonable maximum to ensure forecast quality
+        value=7,       # Default value of one week
+        help="Number of days ahead to forecast. Longer horizons may result in less accurate predictions."
+    )
+
+# Calculate final_date based on init_date and prediction_length
+final_date = init_date + timedelta(days=prediction_length)
 
 date_range_train = to_epidate_range(shared_init_date, init_date)
 date_range_predict = to_epidate_range(init_date, final_date)
-prediction_length = (final_date - init_date).days
 
 if st.button(
     "Fetch Data",
