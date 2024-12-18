@@ -28,6 +28,8 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
+st.markdown("Note: the data on this page is for the US as a whole.")
+
 if st.session_state.show_help_forecast_1:
     st.markdown(helper_content.format(text=forecasting_page_helpers["help_1"]), unsafe_allow_html=True)
 
@@ -93,7 +95,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-col1, col2 = st.columns([5, 11])
+col1, col2 = st.columns([3.9, 11])
 with col1:
     forecaster_type = st.radio("**Forecaster type:**", forecasters_info.keys(), index=0, help="Recommended: ARX forecaster", key="forecaster_type", format_func=lambda x: forecasters_to_display[x])
 with col2:

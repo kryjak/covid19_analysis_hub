@@ -168,7 +168,7 @@ else:
 button_enabled = source_and_signal1 != source_and_signal2 and geo_type != "dma" and "region" in locals()
 
 if st.button(
-    "Fetch Data",
+    "Fetch data and calculate correlation",
     type="primary",
     disabled=not button_enabled,
     help="Click to fetch and analyze the selected signals",
@@ -213,10 +213,10 @@ if "df1" in st.session_state and "df2" in st.session_state:
         if st.button("🛈\nHelp", type="secondary", key="help_button_2"):
             st.session_state.show_help_corr_2 = not st.session_state.show_help_corr_2
 
+    st.info(correlation_method_info[correlation_method])
+
     if st.session_state.show_help_corr_2:
         st.markdown(helper_content.format(text=correlation_page_helpers["help_2"]), unsafe_allow_html=True)
-
-    st.info(correlation_method_info[correlation_method])
 
     # Update plot based on current lag and selected correlation method
     new_fig, new_correlation = update_plot_with_lag(
@@ -235,7 +235,7 @@ if "df1" in st.session_state and "df2" in st.session_state:
         st.plotly_chart(new_fig, use_container_width=True)
 
     st.write(
-        f"Signal correlation at lag {selected_lag} {time_type}s: **{new_correlation}**"
+        f"Signal correlation at lag of {selected_lag} {time_type}s: **{new_correlation}**"
     )
 
     st.divider()
