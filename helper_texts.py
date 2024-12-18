@@ -53,27 +53,50 @@ correlation_method_info = {
 }
 
 correlation_page_helpers = {
-    "help_1": """<h3 style="margin: 0;">How to use this tool</h3>
+    "help_1": """<h3 style="margin: 0;">How to use this tool:</h3>
     <ol>
         <li>Select two different COVID-19 signals to compare</li>
-        <li>Choose a geographic level (nation, state, county, etc.)</li>
-        <li>Select your region of interest</li>
-        <li>Choose a date range for analysis</li>
-        <li>Click 'Fetch Data' to load and visualize the signals</li>
-        <li>Adjust the time lag slider to explore temporal relationships</li>
-        <li>Use 'Calculate best time lag' to find the optimal correlation</li>
+        <li>Select a geographic level (nation, state, county, etc.) and the region of interest within that level</li>
+        <li>Choose a date range to examine</li>
+        <li>Click 'Fetch data and calculate correlation' - this will load the two signals, plot them and calculate the correlation (without a lag) between them.</li>
+        <li>Adjust the 'Time lag' slider to shift the first signal back or forward in time. This will update the plot - try to achieve the best overlap between the two plots, which will also correspond to the best time-lagged correlation. See the 'Help' button below for more information.</li>
+        <li>Experiment with different correlation methods - which one leads to the strongest correlation in your use case?</li>
+        <li>Click 'Calculate best time lag' button to find the optimal time lag for your selected signals and region. This will calculate all lagged correlations in the specified interval and return the time delay corresponding to the highest correlation.</li>
+        <li>Now go back to the slider and set it to this optimal time delay. What does the plot look like? Do you indeed see a high overlap between the two signals</li>
     </ol>
-    <p style="margin: 0;">The tool supports different correlation methods (Pearson, Kendall, Spearman) and allows you to explore how signals relate to each other across time.</p>""",
+    <p style="margin: 0;">What useful information about Covid-19 can you extract from this tool? Hint: as an example, calculating the optimal time lag between the number of cases and deaths can help you estimate the duration of the disease (in the cases that end in fatalities).</p>
+    <p style="margin: 0;">Note that fetching the data takes a few seconds, while calculating the correlations for the full time range might take up to a few minutes.</p>""",
 
     "help_2": """
-    <p style="margin-bottom: 0;">Calculating the best time lag is a complex process that involves finding the optimal 
-    time shift between two signals that maximizes their correlation. This is typically done 
-    using statistical methods such as cross-correlation or dynamic time warping.</p>"""
+    <p style="margin-bottom: 0;">Try to shift the first signal back or forward in time to achieve the best overlap between the two plots. This will also correspond to the best time-lagged correlation.</p>
+    <p style="margin-bottom: 0;">A positive time lag moves this signal *backwards* in time. If this seems counterintuitive, consider this example: imagine that signal 1 has a peak which occurs 20 days after the peak in signal 2. This means that signal 1 is *delayed* by 20 days with respect to signal 2. If we want to visually observe an overlap between them, we therefore need to shift signal 1 backwards by 20 days.</p>
+    <p style="margin-bottom: 0;">In other words, a positive time lag means that signal 1 is caused by signal 2, while a negative time lag means that signal 1 causes signal 2 (assuming that there really is a causal relationship between them).</p>
+    """
 }
 
 forecasting_page_helpers = {
-    "help_1": """<h3 style="margin: 0;">How to use this tool</h3>""",
-    "help_2": """BLABLA"""
+    "help_1": """<h3 style="margin: 0;">How to use this tool:</h3>
+    <ol>
+        <li>Select one or more signals as predictors - the forecasting model will be trained on them.</li>
+        <li>Choose which signal you want to predict</li>
+        <li>Use the sliders to select the date on which you want to make the prediction and for how many days into the future</li>
+        <li>Click 'Fetch data and get predictions' to generate the forecast graph. It will include plots for two types of forecasts:
+            <ul>
+                <li>One using data that was available at the time of the prediction (white lines)</li>
+                <li>One using the latest revised data (blue lines)</li>
+            </ul>
+        </li>
+        Historical data (up until the prediction date) is shown in solid lines, while forecasts are shown in dashed lines. Forecasts also include 90% confidence intervals. 
+        <li>Compare how the predictions differ when using real-time vs. revised data. Which forecast is more accurate? Are the confidence intervals different? You can click on the legend to hide/show individual lines</li>
+    <p style="margin: 0;">Note that generating predictions may take quite a while, especially for longer time horizons.</p>""",
+
+    "help_2": """When looking at the plot, try to consider the following questions:
+        <li>How does the forecast change when using real-time vs. revised data?</li>
+        <li>Which forecast is more accurate? Are the confidence intervals different?</li>
+        <li>Can you identify any patterns in the data that might explain the differences between the forecasts?</li>
+        <li>How does predition accuracy degrade as we increase the prediction horizon (number of predicted days)?</li>
+        <li>How do different forecasting models perform? Which one is the most accurate?</li>
+    """
 }
 
 helper_content = """<div style="background-color: rgba(144,238,144,0.15); padding: 1rem; border-radius: 0.5rem; margin-bottom: 2rem;">{text}</div>"""
