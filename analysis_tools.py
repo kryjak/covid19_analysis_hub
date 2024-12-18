@@ -206,10 +206,10 @@ def epi_predict(df, predictors, predicted, forecaster_type, prediction_length, i
     progress_bar = st.progress(0)
     status_text = st.empty()
 
-    if is_as_of:
-        status_text_as_of = "Generating forecast using data available at the time of prediction..."
+    if not is_as_of:
+        status_text_as_of = "Step 1: Generating forecast using latest available data..."
     else:
-        status_text_as_of = "Generating forecast using latest available data..."
+        status_text_as_of = "Step 2: Generating forecast using data available at the time of prediction..."
 
     try:
         with conversion.localconverter(default_converter + pandas2ri.converter):

@@ -225,7 +225,7 @@ def create_forecast_plot(df_merged, df_merged_as_of, df_forecast, df_forecast_as
         go.Scatter(
             x=df_merged_filtered['time_value'],
             y=df_merged_filtered[predicted_col_name],
-            name='Historical (Latest)',
+            name='Historical (latest)',
             line=dict(color='blue'),
             mode='lines',
             legendgroup='latest',
@@ -238,7 +238,7 @@ def create_forecast_plot(df_merged, df_merged_as_of, df_forecast, df_forecast_as
         go.Scatter(
             x=df_merged_as_of_filtered['time_value'],
             y=df_merged_as_of_filtered[predicted_col_name],
-            name='Historical (As of prediction)',
+            name='Historical (as of prediction)',
             line=dict(color='lightblue'),
             mode='lines',
             legendgroup='as_of',
@@ -251,7 +251,7 @@ def create_forecast_plot(df_merged, df_merged_as_of, df_forecast, df_forecast_as
         go.Scatter(
             x=df_forecast['target_date'],
             y=df_forecast['.pred'],
-            name='Forecast (Latest)',
+            name='Forecast (latest)',
             line=dict(color='blue', dash='dash'),
             mode='lines',
             legendgroup='latest',
@@ -265,7 +265,7 @@ def create_forecast_plot(df_merged, df_merged_as_of, df_forecast, df_forecast_as
         go.Scatter(
             x=df_forecast_as_of['target_date'],
             y=df_forecast_as_of['.pred'],
-            name='Forecast (As of prediction)',
+            name='Forecast (as of prediction)',
             line=dict(color='lightblue', dash='dash'),
             mode='lines',
             legendgroup='as_of',
@@ -297,7 +297,7 @@ def create_forecast_plot(df_merged, df_merged_as_of, df_forecast, df_forecast_as
             fill='toself',
             fillcolor='rgba(173,216,230,0.2)',
             line=dict(color='rgba(173,216,230,0)'),
-            name='90% CI (As of prediction)',
+            name='90% CI (as of prediction)',
             showlegend=True,
             visible='legendonly',
             hoverinfo='skip',
@@ -341,7 +341,7 @@ def create_forecast_plot(df_merged, df_merged_as_of, df_forecast, df_forecast_as
         yref='paper',
         text="Prediction date",
         showarrow=False,
-        yshift=10
+        yshift=25
     )
 
     # Update layout
