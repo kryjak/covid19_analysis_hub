@@ -3,7 +3,7 @@ import pandas as pd
 from available_signals import names_to_sources, sources_to_names
 from helper_texts import helper_content, forecasting_page_helpers, forecasters_info, forecasters_to_display
 from utils import get_shared_dates, to_epidate_range
-from datetime import timedelta
+from datetime import timedelta, date
 from analysis_tools import fetch_covidcast_data, epi_predict, fetch_covidcast_data_multi
 from plotting_utils import create_forecast_plot
 
@@ -64,7 +64,6 @@ except ValueError:
     )
     st.stop()
 
-mid_date = shared_init_date + (shared_final_date - shared_init_date) / 2
 delta = (shared_final_date - shared_init_date).days // 10
 col_date, col_horizon = st.columns([3, 2])  # 3:2 ratio for the columns
 
@@ -73,7 +72,7 @@ with col_date:
         "📅 **When is the prediction made?**",
         min_value=shared_init_date,
         max_value=shared_final_date,
-        value=mid_date,
+        value=date(2021, 2, 20),
         help="The prediction will be made on the day selected here, using all data available up until this day.",
     )
 

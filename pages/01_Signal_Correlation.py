@@ -75,7 +75,7 @@ with col2:
         "Choose signal 2:",
         [signal for signal in all_sources_and_signals if signal != source_and_signal1],
         label_visibility="collapsed",
-        format_func=lambda x: sources_to_names[x], index=1
+        format_func=lambda x: sources_to_names[x], index=0
     )
 
 shared_geo_types = get_shared_geotypes(

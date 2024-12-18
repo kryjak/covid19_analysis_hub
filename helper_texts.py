@@ -23,7 +23,7 @@ Collectively, these two tools illustrate the difficulties that policy makers and
 Likewise, you will see that data quality can significantly impact forecasting accuracy and the spread of the confidence intervals. Unfortunately, decision makers are of course unable to use more accurate data that will only arrive in the future - they must use what is available *now*, without knowing if this data is far from accurate. This highlights the challenges with accurate forecasting and interpretation of epidemiological signals.
 """,
     "technical_text": """#### Technical info
-This is a Streamlit app which uses epidemiological data from the Epidata project by the Delphi Group at Carnegie Mellon University. Because the app uses code in R (in addition to Python), I was not able to deploy it on Streamlit Cloud. Instead, I built a Docker container and deployed it on Google Cloud.
+This is a Streamlit app which uses epidemiological data from the Epidata project by the Delphi Group at Carnegie Mellon University. Because the app uses code in R (in addition to Python), I was not able to deploy it on Streamlit Cloud. Instead, I built a Docker container and deployed it on Google Cloud. The source code can be found at [https://github.com/kryjak/covid19_analysis_hub](https://github.com/kryjak/covid19_analysis_hub).
 
 Relevant documentation:
 - [Delphi Epidata Api](https://cmu-delphi.github.io/delphi-epidata/)
@@ -86,8 +86,8 @@ forecasting_page_helpers = {
                 <li>One using the latest revised data (blue lines)</li>
             </ul>
         </li>
-        Historical data (up until the prediction date) is shown in solid lines, while forecasts are shown in dashed lines. Forecasts also include 90% confidence intervals. 
-        <li>Compare how the predictions differ when using real-time vs. revised data. Which forecast is more accurate? Are the confidence intervals different? You can click on the legend to hide/show individual lines</li>
+        Historical data (up until the prediction date) is shown in solid lines, while forecasts are shown in dashed lines. Forecasts also include 90% confidence intervals. You can click on the legend to hide/show individual lines.
+        <li>Compare how the predictions differ when using real-time vs. revised data. Which forecast is more accurate? Are the confidence intervals different?</li>
     <p style="margin: 0;">Note that generating predictions may take quite a while, especially for longer time horizons.</p>""",
 
     "help_2": """When looking at the plot, try to consider the following questions:
