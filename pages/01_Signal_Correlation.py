@@ -42,7 +42,7 @@ st.set_page_config(page_title="Signal Correlation Analysis", page_icon="🦠", l
 covidcast_metadata = pd.read_csv("csv_data/covidcast_metadata.csv")
 
 # Create header with better spacing and right-aligned help button
-col1, col2, col3 = st.columns([1, 6, 1.2])
+col1, _, col3 = st.columns([1, 7, 3])
 with col1:
     st.page_link("Home.py", label="← Back to Home")
 with col3:
@@ -50,7 +50,7 @@ with col3:
     if 'show_help_corr_1' not in st.session_state:
         st.session_state.show_help_corr_1 = False
     
-    if st.button("🛈\nHelp", type="secondary", key="help_button_1"):
+    if st.button("🛈\nHow to use this tool", type="secondary", key="help_button_1"):
         st.session_state.show_help_corr_1 = not st.session_state.show_help_corr_1
 
 st.markdown("""
@@ -196,7 +196,7 @@ if "df1" in st.session_state and "df2" in st.session_state:
         help=f"Shift signal 1 ({sources_to_names[source_and_signal1]}) forwards or backwards in time",
     )
 
-    col1, col2, col3 = st.columns([5, 3, 1.4])
+    col1, _, col3 = st.columns([5, 4, 1.4])
     with col1:
         # Add the correlation method selection here
         correlation_method = st.radio(
@@ -246,7 +246,7 @@ if "df1" in st.session_state and "df2" in st.session_state:
         help="Calculate the time lag that maximises the correlation between the two signals",
     ):
         with st.spinner(
-            "This might take a while (up to ~2mins for the full data range)..."
+            "This might take a while (up to ~5mins for the full data range)..."
         ):
             lags_and_correlations = get_lags_and_correlations(
                 st.session_state.df1,
