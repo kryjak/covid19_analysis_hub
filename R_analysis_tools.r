@@ -58,7 +58,7 @@ epi_predict <- function(df, predictor_col_names, predicted_col_names, forecaster
   } else if (forecaster_type == "cdc_baseline_forecaster") {
     forecast <- cdc_baseline_forecaster(df,
                     outcome = predicted_col_names,
-                    cdc_baseline_args_list(aheads = 1:ahead))
+                    cdc_baseline_args_list(data_frequency = "1 day", aheads = 1:ahead))
   } else {
     stop("Invalid forecaster type")
   }

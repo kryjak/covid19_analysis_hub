@@ -38,18 +38,16 @@ The app is not perfect. I am sure there are some bugs lurking around. First, you
 If this doesn't help or you are confident it's not a rate limit issue, please copy the error message and/or take a screenshot and let me know by filling in this [feedback form](https://kryjak.notion.site/160beaf7b6f1815387f9ea9685b7bbee?pvs=105).
 
 
-"""
+""",
 }
 
 correlation_method_info = {
     "pearson": """**Pearson correlation** measures linear relationships between signals. Best used when you expect a proportional relationship between signals (e.g., cases and deaths) and your data is normally distributed. Most common choice for COVID-19 analysis when signals follow similar patterns of increase and decrease.""",
-
     "kendall": """**Kendall correlation** measures the ordinal association (ranking agreement) between signals. More robust to outliers than Pearson and useful when you care about whether signals move in the same direction, regardless of magnitude. Good for COVID-19 data with extreme spikes or when comparing signals with different scales.""",
-
     "spearman": """**Spearman correlation** measures monotonic relationships, whether linear or not. 
     Like Kendall, it's based on ranks and resistant to outliers. Useful for COVID-19 analysis when 
     signals might be related but not in a strictly linear way, such as comparing cases to hospital 
-    admissions during different variant waves."""
+    admissions during different variant waves.""",
 }
 
 correlation_page_helpers = {
@@ -66,12 +64,11 @@ correlation_page_helpers = {
     </ol>
     <p style="margin: 0;">What useful information about Covid-19 can you extract from this tool? Hint: as an example, calculating the optimal time lag between the number of cases and deaths can help you estimate the duration of the disease (in the cases that end in fatalities).</p>
     <p style="margin: 0;">Note that fetching the data takes a few seconds, while calculating the correlations for the full time range might take up to a few minutes.</p>""",
-
     "help_2": """
     <p style="margin-bottom: 0;">Try to shift the first signal back or forward in time to achieve the best overlap between the two plots. This will also correspond to the best time-lagged correlation.</p>
     <p style="margin-bottom: 0;">A positive time lag moves this signal *backwards* in time. If this seems counterintuitive, consider this example: imagine that signal 1 has a peak which occurs 20 days after the peak in signal 2. This means that signal 1 is *delayed* by 20 days with respect to signal 2. If we want to visually observe an overlap between them, we therefore need to shift signal 1 backwards by 20 days.</p>
     <p style="margin-bottom: 0;">In other words, a positive time lag means that signal 1 is caused by signal 2, while a negative time lag means that signal 1 causes signal 2 (assuming that there really is a causal relationship between them).</p>
-    """
+    """,
 }
 
 forecasting_page_helpers = {
@@ -89,28 +86,25 @@ forecasting_page_helpers = {
         Historical data (up until the prediction date) is shown in solid lines, while forecasts are shown in dashed lines. Forecasts also include 90% confidence intervals. You can click on the legend to hide/show individual lines.
         <li>Compare how the predictions differ when using real-time vs. revised data. Which forecast is more accurate? Are the confidence intervals different?</li>
     <p style="margin: 0;">Note that generating predictions may take quite a while, especially for longer time horizons.</p>""",
-
     "help_2": """When looking at the plot, try to consider the following questions:
         <li>How does the forecast change when using real-time vs. revised data?</li>
         <li>Which forecast is more accurate? Are the confidence intervals different?</li>
         <li>Can you identify any patterns in the data that might explain the differences between the forecasts?</li>
         <li>How does predition accuracy degrade as we increase the prediction horizon (number of predicted days)?</li>
         <li>How do different forecasting models perform? Which one is the most accurate?</li>
-    """
+    """,
 }
 
 helper_content = """<div style="background-color: rgba(144,238,144,0.15); padding: 1rem; border-radius: 0.5rem; margin-bottom: 2rem;">{text}</div>"""
 
 forecasters_info = {
     "arx_forecaster": """**ARX Forecaster** (AutoRegressive with eXogenous inputs) combines historical patterns with external factors to make predictions. It creates separate models for each future time point, making it particularly good at capturing both short-term trends and the influence of related signals (like how cases might affect future hospitalizations).""",
-    
-    "flatline_forecaster": """**Flatline Forecaster** is a simple but often effective model that assumes the future will match the most recent observation. It creates uncertainty intervals based on how wrong this assumption has been in the past. While basic, it can be surprisingly accurate for stable metrics and serves as a good baseline for comparison.""",
-    
-    "cdc_baseline_forecaster": """**CDC Baseline Forecaster** is an enhanced version of the flatline approach used by the CDC. It takes the latest value as its prediction but creates more sophisticated uncertainty ranges by analyzing historical patterns of change. This helps capture the natural variability seen in epidemic data while remaining computationally simple."""
+    "flatline_forecaster": """**Flatline Forecaster** is a simple but often effective model that takes the latest observation as its prediction. It creates uncertainty intervals based on how wrong this assumption has been in the past. While basic, it can be surprisingly accurate for stable metrics and serves as a good baseline for comparison.""",
+    "cdc_baseline_forecaster": """**CDC Baseline Forecaster** is an enhanced version of the flatline approach used by the CDC. It takes the latest observed value as its prediction but creates more sophisticated uncertainty ranges by analyzing historical patterns of change. This helps capture the natural variability seen in epidemic data while remaining computationally simple.""",
 }
 
 forecasters_to_display = {
     "arx_forecaster": "ARX Forecaster",
     "flatline_forecaster": "Flatline Forecaster",
-    "cdc_baseline_forecaster": "CDC Baseline Forecaster"
+    "cdc_baseline_forecaster": "CDC Baseline Forecaster",
 }
