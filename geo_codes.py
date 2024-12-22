@@ -17,7 +17,11 @@ display_to_geotypes = {v: k for k, v in geotypes_to_display.items()}
 
 # Now read in the data for each of them
 fips_df = pd.read_csv(
-    "csv_data/fips2county.tsv", sep="\t", header="infer", dtype="str", encoding="latin-1"
+    "csv_data/fips2county.tsv",
+    sep="\t",
+    header="infer",
+    dtype="str",
+    encoding="latin-1",
 )
 hrr_df = pd.read_csv("csv_data/ZipHsaHrr19.csv", dtype="str")
 msa_df = pd.read_csv("csv_data/msa_processed.csv", dtype="str")
@@ -54,11 +58,7 @@ display_to_hrr = {v: k for k, v in hrr_to_display.items()}
 
 hrr_by_state = (
     hrr_df.groupby("hrrstate")["hrrcity"]
-    .apply(
-        lambda x: [
-            f"{city}, {state}" for city, state in zip(x, [x.name] * len(x))
-        ]
-    )
+    .apply(lambda x: [f"{city}, {state}" for city, state in zip(x, [x.name] * len(x))])
     .to_dict()
 )
 

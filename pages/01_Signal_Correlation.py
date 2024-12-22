@@ -35,9 +35,15 @@ from plotting_utils import (
     plot_correlation_distribution,
 )
 
-from helper_texts import correlation_method_info, correlation_page_helpers, helper_content
+from helper_texts import (
+    correlation_method_info,
+    correlation_page_helpers,
+    helper_content,
+)
 
-st.set_page_config(page_title="Signal Correlation Analysis", page_icon="🦠", layout="wide")
+st.set_page_config(
+    page_title="Signal Correlation Analysis", page_icon="🦠", layout="wide"
+)
 
 covidcast_metadata = pd.read_csv("csv_data/covidcast_metadata.csv")
 
@@ -47,27 +53,39 @@ with col1:
     st.page_link("Home.py", label="← Back to Home")
 with col3:
     # Store the help button state in session state
-    if 'show_help_corr_1' not in st.session_state:
+    if "show_help_corr_1" not in st.session_state:
         st.session_state.show_help_corr_1 = False
-    
+
     if st.button("🛈\nHow to use this tool", type="secondary", key="help_button_1"):
         st.session_state.show_help_corr_1 = not st.session_state.show_help_corr_1
 
-st.markdown("""
+st.markdown(
+    """
     <div style="background-color: rgba(255,165,0,0.1); padding: 0.5rem; border-radius: 0.5rem; margin-bottom: 1rem;">
         <h2 style="margin: 0;">COVID-19 Signal Correlation Analysis</h2>
     </div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 if st.session_state.show_help_corr_1:
-    st.markdown(helper_content.format(text=correlation_page_helpers["help_1"]), unsafe_allow_html=True)
+    st.markdown(
+        helper_content.format(text=correlation_page_helpers["help_1"]),
+        unsafe_allow_html=True,
+    )
 
 all_sources_and_signals = list(names_to_sources.values())
 
 st.markdown("📊 **Select two signals:**")
 col1, col2 = st.columns(2)
 with col1:
-    source_and_signal1 = st.selectbox("Choose signal 1:", all_sources_and_signals, label_visibility="collapsed", format_func=lambda x: sources_to_names[x], index=0)
+    source_and_signal1 = st.selectbox(
+        "Choose signal 1:",
+        all_sources_and_signals,
+        label_visibility="collapsed",
+        format_func=lambda x: sources_to_names[x],
+        index=0,
+    )
     # label_visibility="collapsed" might be disallowed in the future
     # https://docs.streamlit.io/develop/api-reference/widgets/st.selectbox
 with col2:
@@ -75,7 +93,8 @@ with col2:
         "Choose signal 2:",
         [signal for signal in all_sources_and_signals if signal != source_and_signal1],
         label_visibility="collapsed",
-        format_func=lambda x: sources_to_names[x], index=0
+        format_func=lambda x: sources_to_names[x],
+        index=0,
     )
 
 shared_geo_types = get_shared_geotypes(
@@ -165,7 +184,11 @@ else:
     st.error(f"Invalid time_type: {time_type}", icon="🚨")
     st.stop()
 
-button_enabled = source_and_signal1 != source_and_signal2 and geo_type != "dma" and "region" in locals()
+button_enabled = (
+    source_and_signal1 != source_and_signal2
+    and geo_type != "dma"
+    and "region" in locals()
+)
 
 if st.button(
     "Fetch data and calculate correlation",
@@ -176,10 +199,20 @@ if st.button(
     with st.spinner("Fetching data..."):
         # Store the fetched data in session state
         st.session_state.df1 = fetch_covidcast_data(
-            geo_type, region, source_and_signal1, date_range[0], date_range[-1], time_type
+            geo_type,
+            region,
+            source_and_signal1,
+            date_range[0],
+            date_range[-1],
+            time_type,
         )
         st.session_state.df2 = fetch_covidcast_data(
-            geo_type, region, source_and_signal2, date_range[0], date_range[-1], time_type
+            geo_type,
+            region,
+            source_and_signal2,
+            date_range[0],
+            date_range[-1],
+            time_type,
         )
 
     st.divider()
@@ -203,11 +236,11 @@ if "df1" in st.session_state and "df2" in st.session_state:
             "📈 **Select correlation method:**",
             ["Pearson", "Kendall", "Spearman"],
             help="Choose the statistical method for calculating correlation between signals.",
-            key="correlation_method"
+            key="correlation_method",
         ).lower()
     with col3:
         # Store the help button state in session state
-        if 'show_help_corr_2' not in st.session_state:
+        if "show_help_corr_2" not in st.session_state:
             st.session_state.show_help_corr_2 = False
 
         if st.button("🛈\nHelp", type="secondary", key="help_button_2"):
@@ -216,7 +249,10 @@ if "df1" in st.session_state and "df2" in st.session_state:
     st.info(correlation_method_info[correlation_method])
 
     if st.session_state.show_help_corr_2:
-        st.markdown(helper_content.format(text=correlation_page_helpers["help_2"]), unsafe_allow_html=True)
+        st.markdown(
+            helper_content.format(text=correlation_page_helpers["help_2"]),
+            unsafe_allow_html=True,
+        )
 
     # Update plot based on current lag and selected correlation method
     new_fig, new_correlation = update_plot_with_lag(
@@ -228,7 +264,7 @@ if "df1" in st.session_state and "df2" in st.session_state:
         region_display,
         selected_lag,
         time_type,
-        correlation_method  # Pass the selected method
+        correlation_method,  # Pass the selected method
     )
 
     with plot_container:
@@ -253,7 +289,7 @@ if "df1" in st.session_state and "df2" in st.session_state:
                 st.session_state.df2,
                 cor_by="geo_value",
                 max_lag=max_lag,
-                method=correlation_method  # Pass the selected method
+                method=correlation_method,  # Pass the selected method
             )
         best_lag = max(lags_and_correlations, key=lags_and_correlations.get)
         best_correlation = lags_and_correlations[best_lag]
@@ -264,7 +300,7 @@ if "df1" in st.session_state and "df2" in st.session_state:
         with col1:
             fig1 = plot_correlation_vs_lag(lags_and_correlations, time_type)
             st.plotly_chart(fig1, use_container_width=True)
-            
+
         with col2:
             fig2 = plot_correlation_distribution(lags_and_correlations)
             st.plotly_chart(fig2, use_container_width=True)

@@ -4,8 +4,6 @@ from epiweeks import Week
 from rpy2.robjects import r
 from rpy2.robjects import conversion, default_converter
 import os
-from pathlib import Path
-from rpy2.rinterface_lib.embedded import RRuntimeError
 
 covidcast_metadata = pd.read_csv("csv_data/covidcast_metadata.csv")
 
@@ -28,20 +26,20 @@ def get_signal_geotypes(metadata, source_and_signal):
 def get_shared_geotypes(metadata, *source_and_signals):
     """
     Get geo_types shared across multiple signals.
-    
+
     Args:
         metadata: COVIDcast metadata DataFrame
         *source_and_signals: Variable number of (source, signal) tuples
     """
     if len(source_and_signals) < 2:
         raise ValueError("At least two source-signal pairs are required")
-        
+
     # Get geo_types for each source-signal pair
     all_geo_types = [
         set(get_signal_geotypes(metadata, source_signal))
         for source_signal in source_and_signals
     ]
-    
+
     # Find intersection of all sets
     return list(set.intersection(*all_geo_types))
 
@@ -72,7 +70,7 @@ def get_signal_dates(metadata, source_and_signal, geo_type, return_time_type=Fal
 def get_shared_dates(metadata, geo_type, *source_and_signals):
     """
     Get overlapping date range and verify time_type matches across signals.
-    
+
     Args:
         metadata: COVIDcast metadata DataFrame
         geo_type: Geographic type to check
@@ -91,11 +89,11 @@ def get_shared_dates(metadata, geo_type, *source_and_signals):
     time_types = [dates[2] for dates in date_ranges]
     if not all(tt == time_types[0] for tt in time_types):
         raise ValueError("All signals must have the same time_type")
-    
+
     # Find overlapping date range
     init_date = max(dates[0] for dates in date_ranges)
     final_date = min(dates[1] for dates in date_ranges)
-    
+
     return init_date, final_date, time_types[0]
 
 
@@ -116,7 +114,7 @@ def to_epiweek_range(dt1: date, dt2: date) -> tuple[int, int]:
 def save_the_api_key(api_key):
     # Set environment variable in R
     r(f'Sys.setenv(DELPHI_EPIDATA_KEY="{api_key}")')
-    
+
     # Load into R session
     r_script_path = os.path.abspath("R_analysis_tools.r")
     with conversion.localconverter(default_converter):
