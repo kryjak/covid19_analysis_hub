@@ -225,7 +225,6 @@ if predict_button:
             is_as_of=True,
         )
 
-        st.write(df_forecast)
         fig = create_forecast_plot(
             df_merged,
             df_merged_as_of,
